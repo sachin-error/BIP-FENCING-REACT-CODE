@@ -3,15 +3,15 @@ const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 const statCards = [
   { label: 'Invoices Today', value: '0', icon: 'bi-file-earmark-check', color: 'card-blue', badge: 'Today', unit: '' },
-  { label: 'Sales Today', value: '0.00', icon: 'bi-currency-exchange', color: 'card-green', badge: 'AED', unit: 'AED ' },
+  { label: 'Sales Today', value: '0.00', icon: 'bi-currency-exchange', color: 'card-green', badge: 'AED', unit: 'INR' },
   { label: 'Invoices in Month', value: '0', icon: 'bi-calendar3', color: 'card-red', badge: 'Month', unit: '' },
-  { label: 'Sales in Month', value: '0.00', icon: 'bi-graph-up-arrow', color: 'card-orange', badge: 'AED', unit: 'AED ' },
+  { label: 'Sales in Month', value: '0.00', icon: 'bi-graph-up-arrow', color: 'card-orange', badge: 'AED', unit: 'INR ' },
 ];
 
 const targets = [
-  { label: 'Expected Income', icon: 'bi-wallet2', color: '#0969da', bg: '#ddf4ff', progress: 0, value: 'AED 0.00' },
-  { label: 'Expected Expenses', icon: 'bi-credit-card', color: '#cf222e', bg: '#fff1f0', progress: 0, value: 'AED 0.00' },
-  { label: 'Expected Sales', icon: 'bi-bag-heart', color: '#1a7f37', bg: '#dafbe1', progress: 0, value: 'AED 0.00' },
+  { label: 'Expected Income', icon: 'bi-wallet2', color: '#0969da', bg: '#ddf4ff', progress: 0, value: 'INR 0.00' },
+  { label: 'Expected Expenses', icon: 'bi-credit-card', color: '#cf222e', bg: '#fff1f0', progress: 0, value: 'INR 0.00' },
+  { label: 'Expected Sales', icon: 'bi-bag-heart', color: '#1a7f37', bg: '#dafbe1', progress: 0, value: 'INR 0.00' },
   { label: 'Expected Invoices', icon: 'bi-receipt-cutoff', color: '#bc4c00', bg: '#fff1e5', progress: 0, value: '0' },
 ];
 
