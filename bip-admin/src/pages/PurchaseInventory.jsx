@@ -1,147 +1,598 @@
 // import { useState } from 'react';
 
 // const units = ['Pcs', 'Kg', 'Meter', 'Roll', 'Box', 'Set', 'Liter', 'Ton'];
+// const paymentMethods = ['Cash', 'Bank Transfer', 'Cheque', 'Credit'];
+// const warehouses = ['Main Warehouse', 'Site A - Dubai', 'Site B - Sharjah', 'Site C - Abu Dhabi'];
+
+// const DUMMY_HISTORY = [
+//   { id: 1, poNo: 'PO-0004', poDate: '2026-04-28', supplier: 'Al Faris Trading', warehouse: 'Main Warehouse', items: [{ itemName: 'Chain Link Fencing', sku: 'SKU-001', qty: 50, unit: 'Meter', costPrice: 85 }, { itemName: 'Steel Posts 2m', sku: 'SKU-002', qty: 100, unit: 'Pcs', costPrice: 45 }], totalCost: 8750, amountPaid: 8750, paymentMethod: 'Bank Transfer', paymentRef: 'TXN-2045', notes: '' },
+//   { id: 2, poNo: 'PO-0003', poDate: '2026-04-22', supplier: 'Gulf Steel Co', warehouse: 'Site A - Dubai', items: [{ itemName: 'Barbed Wire Roll', sku: 'SKU-010', qty: 30, unit: 'Roll', costPrice: 120 }], totalCost: 3600, amountPaid: 2000, paymentMethod: 'Cheque', paymentRef: 'CHQ-881', notes: 'Partial payment' },
+//   { id: 3, poNo: 'PO-0002', poDate: '2026-04-15', supplier: 'Emirates Hardware', warehouse: 'Main Warehouse', items: [{ itemName: 'Razor Wire', sku: 'SKU-022', qty: 20, unit: 'Roll', costPrice: 180 }], totalCost: 3600, amountPaid: 3600, paymentMethod: 'Cash', paymentRef: '', notes: '' },
+//   { id: 4, poNo: 'PO-0001', poDate: '2026-04-08', supplier: 'Dubai Metals LLC', warehouse: 'Site B - Sharjah', items: [{ itemName: 'Galvanized Pipes', sku: 'SKU-033', qty: 200, unit: 'Meter', costPrice: 35 }], totalCost: 7000, amountPaid: 3000, paymentMethod: 'Credit', paymentRef: '', notes: 'Balance due' },
+// ];
+
+// function fmt(n) {
+//   return Number(n).toLocaleString('en-AE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+// }
+
+// function StatusBadge({ paid, total }) {
+//   const bal = total - paid;
+//   if (bal <= 0) return <span style={{ background: '#dcfce7', color: '#15803d', padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600 }}>Paid</span>;
+//   if (paid > 0) return <span style={{ background: '#fef9c3', color: '#a16207', padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600 }}>Partial</span>;
+//   return <span style={{ background: '#fee2e2', color: '#b91c1c', padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600 }}>Pending</span>;
+// }
+
+// function StatCard({ label, value, sub, color }) {
+//   const colors = {
+//     purple: { bg: '#f5f3ff', val: '#7c3INR' },
+//     red: { bg: '#fff1f2', val: '#dc2626' },
+//     green: { bg: '#f0fdf4', val: '#16a34a' },
+//     amber: { bg: '#fffbeb', val: '#d97706' },
+//   };
+//   const c = colors[color] || colors.purple;
+//   return (
+//     <div style={{ background: c.bg, borderRadius: 12, padding: '16px 18px', flex: 1, minWidth: 0 }}>
+//       <div style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }}>{label}</div>
+//       <div style={{ fontSize: 20, fontWeight: 700, color: c.val, fontFamily: 'JetBrains Mono, monospace' }}>{value}</div>
+//       {sub && <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 3 }}>{sub}</div>}
+//     </div>
+//   );
+// }
 
 // export default function PurchaseInventory() {
+//   const [activeTab, setActiveTab] = useState('new');
+//   const [history, setHistory] = useState(DUMMY_HISTORY);
+//   const [viewPO, setViewPO] = useState(null);
+//   const [searchQ, setSearchQ] = useState('');
+//   const [filterStatus, setFilterStatus] = useState('All');
+//   const [payingId, setPayingId] = useState(null);
+//   const [extraPayment, setExtraPayment] = useState('');
+
 //   const [form, setForm] = useState({
-//     poNo: '', poDate: '', supplier: '', warehouse: '',
+//     poNo: 'PO-0005',
+//     poDate: new Date().toISOString().split('T')[0],
+//     supplier: '',
+//     warehouse: 'Main Warehouse',
 //     items: [{ itemName: '', sku: '', qty: 1, unit: 'Pcs', costPrice: 0 }],
+//     amountPaid: 0,
+//     paymentMethod: 'Cash',
+//     paymentRef: '',
+//     paymentDate: new Date().toISOString().split('T')[0],
 //     notes: '',
 //   });
 
 //   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 //   const handleItemChange = (i, field, value) => {
-//     const items = [...form.items]; items[i][field] = value; setForm({ ...form, items });
+//     const items = [...form.items];
+//     items[i] = { ...items[i], [field]: value };
+//     setForm({ ...form, items });
 //   };
-//   const addItem = () => setForm({ ...form, items: [...form.items, { itemName: '', sku: '', qty: 1, unit: 'Pcs', costPrice: 0 }] });
+//   const addItem = () => setForm({ ...form, items: [...form.items, { itemName: '', sku: `SKU-00${form.items.length + 1}`, qty: 1, unit: 'Pcs', costPrice: 0 }] });
 //   const removeItem = (i) => setForm({ ...form, items: form.items.filter((_, idx) => idx !== i) });
 
 //   const totalCost = form.items.reduce((s, it) => s + Number(it.qty) * Number(it.costPrice), 0);
+//   const balanceDue = Math.max(0, totalCost - Number(form.amountPaid));
 
 //   const handleSubmit = (e) => {
 //     e.preventDefault();
-//     console.log('Purchase Inventory Data:', { ...form, totalCost });
-//     alert('Purchase Inventory submitted! Check console for data.');
+//     const newPO = { id: Date.now(), ...form, totalCost, amountPaid: Number(form.amountPaid) };
+//     setHistory([newPO, ...history]);
+//     setForm({ poNo: `PO-${String(history.length + 2).padStart(4, '0')}`, poDate: new Date().toISOString().split('T')[0], supplier: '', warehouse: 'Main Warehouse', items: [{ itemName: '', sku: '', qty: 1, unit: 'Pcs', costPrice: 0 }], amountPaid: 0, paymentMethod: 'Cash', paymentRef: '', paymentDate: new Date().toISOString().split('T')[0], notes: '' });
+//     setActiveTab('history');
+//     alert('Purchase Order submitted successfully!');
 //   };
 
+//   const totalPurchases = history.reduce((s, p) => s + p.totalCost, 0);
+//   const totalPaid = history.reduce((s, p) => s + Number(p.amountPaid), 0);
+//   const totalBalance = totalPurchases - totalPaid;
+//   const pendingCount = history.filter(p => Number(p.amountPaid) < p.totalCost).length;
+
+//   const filteredHistory = history.filter(p => {
+//     const bal = p.totalCost - Number(p.amountPaid);
+//     const statusMatch = filterStatus === 'All' || (filterStatus === 'Paid' && bal <= 0) || (filterStatus === 'Partial' && bal > 0 && p.amountPaid > 0) || (filterStatus === 'Pending' && p.amountPaid == 0);
+//     const searchMatch = !searchQ || p.poNo.toLowerCase().includes(searchQ.toLowerCase()) || (p.supplier || '').toLowerCase().includes(searchQ.toLowerCase());
+//     return statusMatch && searchMatch;
+//   });
+
+//   const pendingPayments = history.filter(p => Number(p.amountPaid) < p.totalCost);
+
+//   const tabStyle = (t) => ({
+//     padding: '8px 20px', borderRadius: 8, fontSize: 13, cursor: 'pointer', border: 'none', fontFamily: 'Sora, sans-serif', fontWeight: activeTab === t ? 600 : 400,
+//     background: activeTab === t ? '#8250df' : 'transparent', color: activeTab === t ? '#fff' : '#64748b',
+//   });
+
 //   return (
-//     <>
+//     <div style={{ width: '100%', minHeight: '100vh', background: '#f8f7fc' }}>
+
+//       {/* Page Header */}
 //       <div className="page-header">
 //         <h1><i className="bi bi-cart-plus-fill me-2" style={{ color: '#8250df' }}></i>Purchase Inventory</h1>
-//         <p>Record incoming stock and inventory purchases</p>
+//         <p>Record incoming stock, track payments and manage purchase history</p>
 //       </div>
 
-//       <form onSubmit={handleSubmit}>
-//         <div className="row g-3">
+//       {/* Stats Row */}
+//       <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+//         <StatCard label="Total Purchases" value={`INR ${fmt(totalPurchases)}`} sub={`${history.length} orders`} color="purple" />
+//         <StatCard label="Total Paid" value={`INR ${fmt(totalPaid)}`} sub="All time" color="green" />
+//         <StatCard label="Balance Due" value={`INR ${fmt(totalBalance)}`} sub={`${pendingCount} suppliers`} color="red" />
+//         <StatCard label="Pending Orders" value={pendingCount} sub="Awaiting full payment" color="amber" />
+//       </div>
 
-//           <div className="col-12">
-//             <div className="client-form-card shadow-sm">
-//               <h6 style={{ fontWeight: 700, fontSize: 14, marginBottom: 18 }}>
-//                 <i className="bi bi-clipboard-data me-2" style={{ color: '#8250df' }}></i>Purchase Order Info
-//               </h6>
-//               <div className="row g-3">
-//                 <div className="col-md-3">
-//                   <label className="form-label">PO Number <span style={{ color: 'red' }}>*</span></label>
-//                   <input className="form-control" name="poNo" value={form.poNo} onChange={handleChange} placeholder="PO-0001" required />
-//                 </div>
-//                 <div className="col-md-3">
-//                   <label className="form-label">Date <span style={{ color: 'red' }}>*</span></label>
-//                   <input type="date" className="form-control" name="poDate" value={form.poDate} onChange={handleChange} required />
-//                 </div>
-//                 <div className="col-md-3">
-//                   <label className="form-label">Supplier</label>
-//                   <input className="form-control" name="supplier" value={form.supplier} onChange={handleChange} placeholder="Supplier name" />
-//                 </div>
-//                 <div className="col-md-3">
-//                   <label className="form-label">Warehouse / Location</label>
-//                   <input className="form-control" name="warehouse" value={form.warehouse} onChange={handleChange} placeholder="Main Warehouse" />
-//                 </div>
-//               </div>
-//             </div>
-//           </div>
+//       {/* Tabs */}
+//       <div style={{ display: 'flex', gap: 4, background: '#fff', border: '1px solid #e9d5ff', borderRadius: 10, padding: 4, marginBottom: 20, width: 'fit-content' }}>
+//         <button style={tabStyle('new')} onClick={() => setActiveTab('new')}>New Purchase</button>
+//         <button style={tabStyle('history')} onClick={() => setActiveTab('history')}>Purchase History</button>
+//         <button style={tabStyle('pending')} onClick={() => setActiveTab('pending')}>Pending Payments</button>
+//       </div>
 
-//           <div className="col-12">
-//             <div className="client-form-card shadow-sm">
-//               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-//                 <h6 style={{ fontWeight: 700, fontSize: 14, margin: 0 }}>
-//                   <i className="bi bi-boxes me-2" style={{ color: '#8250df' }}></i>Stock Items
+//       {/* ─────────── TAB: NEW PURCHASE ─────────── */}
+//       {activeTab === 'new' && (
+//         <form onSubmit={handleSubmit}>
+//           <div className="row g-3">
+
+//             {/* PO Info */}
+//             <div className="col-12">
+//               <div className="client-form-card shadow-sm">
+//                 <h6 style={{ fontWeight: 700, fontSize: 14, marginBottom: 18 }}>
+//                   <i className="bi bi-clipboard-data me-2" style={{ color: '#8250df' }}></i>Purchase Order Info
 //                 </h6>
-//                 <button type="button" onClick={addItem} style={{ background: '#8250df', border: 'none', color: 'white', padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-//                   <i className="bi bi-plus-lg me-1"></i>Add Item
-//                 </button>
-//               </div>
-//               <div className="table-responsive">
-//                 <table className="table" style={{ fontSize: 13.5 }}>
-//                   <thead style={{ background: '#f6f8fa' }}>
-//                     <tr>
-//                       <th style={{ fontWeight: 600, color: '#57606a', border: 'none', padding: '10px 12px' }}>#</th>
-//                       <th style={{ fontWeight: 600, color: '#57606a', border: 'none' }}>Item Name</th>
-//                       <th style={{ fontWeight: 600, color: '#57606a', border: 'none', width: 120 }}>SKU</th>
-//                       <th style={{ fontWeight: 600, color: '#57606a', border: 'none', width: 80 }}>Qty</th>
-//                       <th style={{ fontWeight: 600, color: '#57606a', border: 'none', width: 100 }}>Unit</th>
-//                       <th style={{ fontWeight: 600, color: '#57606a', border: 'none', width: 130 }}>Cost Price</th>
-//                       <th style={{ fontWeight: 600, color: '#57606a', border: 'none', width: 130 }}>Total</th>
-//                       <th style={{ border: 'none', width: 50 }}></th>
-//                     </tr>
-//                   </thead>
-//                   <tbody>
-//                     {form.items.map((item, i) => (
-//                       <tr key={i}>
-//                         <td style={{ verticalAlign: 'middle', padding: '8px 12px', color: '#57606a' }}>{i + 1}</td>
-//                         <td><input className="form-control form-control-sm" value={item.itemName} onChange={e => handleItemChange(i, 'itemName', e.target.value)} placeholder="Item name" /></td>
-//                         <td><input className="form-control form-control-sm" value={item.sku} onChange={e => handleItemChange(i, 'sku', e.target.value)} placeholder="SKU-001" /></td>
-//                         <td><input type="number" className="form-control form-control-sm" value={item.qty} onChange={e => handleItemChange(i, 'qty', e.target.value)} min="1" /></td>
-//                         <td>
-//                           <select className="form-select form-select-sm" value={item.unit} onChange={e => handleItemChange(i, 'unit', e.target.value)}>
-//                             {units.map(u => <option key={u}>{u}</option>)}
-//                           </select>
-//                         </td>
-//                         <td><input type="number" className="form-control form-control-sm" value={item.costPrice} onChange={e => handleItemChange(i, 'costPrice', e.target.value)} min="0" /></td>
-//                         <td style={{ verticalAlign: 'middle', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace' }}>AED {(Number(item.qty) * Number(item.costPrice)).toFixed(2)}</td>
-//                         <td style={{ verticalAlign: 'middle' }}>
-//                           {form.items.length > 1 && <button type="button" onClick={() => removeItem(i)} style={{ background: 'none', border: 'none', color: '#cf222e', cursor: 'pointer', fontSize: 16 }}><i className="bi bi-trash3"></i></button>}
-//                         </td>
-//                       </tr>
-//                     ))}
-//                   </tbody>
-//                 </table>
-//               </div>
-//               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
-//                 <div style={{ background: '#fbefff', border: '1px solid #d8b4fe', borderRadius: 10, padding: '12px 20px', minWidth: 220 }}>
-//                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15 }}>
-//                     <span style={{ fontWeight: 700 }}>Total Cost</span>
-//                     <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: '#8250df' }}>AED {totalCost.toFixed(2)}</span>
+//                 <div className="row g-3">
+//                   <div className="col-md-3">
+//                     <label className="form-label">PO Number <span style={{ color: 'red' }}>*</span></label>
+//                     <input className="form-control" name="poNo" value={form.poNo} onChange={handleChange} placeholder="PO-0001" required />
+//                   </div>
+//                   <div className="col-md-3">
+//                     <label className="form-label">Date <span style={{ color: 'red' }}>*</span></label>
+//                     <input type="date" className="form-control" name="poDate" value={form.poDate} onChange={handleChange} required />
+//                   </div>
+//                   <div className="col-md-3">
+//                     <label className="form-label">Supplier</label>
+//                     <input className="form-control" name="supplier" value={form.supplier} onChange={handleChange} placeholder="Supplier name" list="supplier-list" />
+//                     <datalist id="supplier-list">
+//                       <option value="Al Faris Trading" />
+//                       <option value="Gulf Steel Co" />
+//                       <option value="Emirates Hardware" />
+//                       <option value="Dubai Metals LLC" />
+//                     </datalist>
+//                   </div>
+//                   <div className="col-md-3">
+//                     <label className="form-label">Warehouse / Location</label>
+//                     <select className="form-select" name="warehouse" value={form.warehouse} onChange={handleChange}>
+//                       {warehouses.map(w => <option key={w}>{w}</option>)}
+//                     </select>
 //                   </div>
 //                 </div>
 //               </div>
 //             </div>
-//           </div>
 
-//           <div className="col-12">
-//             <div className="client-form-card shadow-sm">
-//               <label className="form-label" style={{ fontWeight: 600, fontSize: 13 }}>Notes</label>
-//               <textarea className="form-control" name="notes" value={form.notes} onChange={handleChange} rows={2} placeholder="Additional notes..." />
+//             {/* Stock Items */}
+//             <div className="col-12">
+//               <div className="client-form-card shadow-sm">
+//                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+//                   <h6 style={{ fontWeight: 700, fontSize: 14, margin: 0 }}>
+//                     <i className="bi bi-boxes me-2" style={{ color: '#8250df' }}></i>Stock Items
+//                   </h6>
+//                   <button type="button" onClick={addItem} style={{ background: '#8250df', border: 'none', color: 'white', padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+//                     <i className="bi bi-plus-lg me-1"></i>Add Item
+//                   </button>
+//                 </div>
+//                 <div className="table-responsive">
+//                   <table className="table" style={{ fontSize: 13.5 }}>
+//                     <thead style={{ background: '#f6f8fa' }}>
+//                       <tr>
+//                         <th style={{ fontWeight: 600, color: '#57606a', border: 'none', padding: '10px 12px' }}>#</th>
+//                         <th style={{ fontWeight: 600, color: '#57606a', border: 'none' }}>Item Name</th>
+//                         <th style={{ fontWeight: 600, color: '#57606a', border: 'none', width: 120 }}>SKU</th>
+//                         <th style={{ fontWeight: 600, color: '#57606a', border: 'none', width: 80 }}>Qty</th>
+//                         <th style={{ fontWeight: 600, color: '#57606a', border: 'none', width: 100 }}>Unit</th>
+//                         <th style={{ fontWeight: 600, color: '#57606a', border: 'none', width: 140 }}>Cost Price (INR)</th>
+//                         <th style={{ fontWeight: 600, color: '#57606a', border: 'none', width: 130 }}>Total (INR)</th>
+//                         <th style={{ border: 'none', width: 50 }}></th>
+//                       </tr>
+//                     </thead>
+//                     <tbody>
+//                       {form.items.map((item, i) => (
+//                         <tr key={i}>
+//                           <td style={{ verticalAlign: 'middle', padding: '8px 12px', color: '#57606a' }}>{i + 1}</td>
+//                           <td><input className="form-control form-control-sm" value={item.itemName} onChange={e => handleItemChange(i, 'itemName', e.target.value)} placeholder="Item name" /></td>
+//                           <td><input className="form-control form-control-sm" value={item.sku} onChange={e => handleItemChange(i, 'sku', e.target.value)} placeholder="SKU-001" /></td>
+//                           <td><input type="number" className="form-control form-control-sm" value={item.qty} onChange={e => handleItemChange(i, 'qty', e.target.value)} min="1" /></td>
+//                           <td>
+//                             <select className="form-select form-select-sm" value={item.unit} onChange={e => handleItemChange(i, 'unit', e.target.value)}>
+//                               {units.map(u => <option key={u}>{u}</option>)}
+//                             </select>
+//                           </td>
+//                           <td><input type="number" className="form-control form-control-sm" value={item.costPrice} onChange={e => handleItemChange(i, 'costPrice', e.target.value)} min="0" /></td>
+//                           <td style={{ verticalAlign: 'middle', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace' }}>
+//                             INR {fmt(Number(item.qty) * Number(item.costPrice))}
+//                           </td>
+//                           <td style={{ verticalAlign: 'middle' }}>
+//                             {form.items.length > 1 && (
+//                               <button type="button" onClick={() => removeItem(i)} style={{ background: 'none', border: 'none', color: '#cf222e', cursor: 'pointer', fontSize: 16 }}>
+//                                 <i className="bi bi-trash3"></i>
+//                               </button>
+//                             )}
+//                           </td>
+//                         </tr>
+//                       ))}
+//                     </tbody>
+//                   </table>
+//                 </div>
+//                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+//                   <div style={{ background: '#fbefff', border: '1px solid #d8b4fe', borderRadius: 10, padding: '12px 20px', minWidth: 220 }}>
+//                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15 }}>
+//                       <span style={{ fontWeight: 700 }}>Total Cost</span>
+//                       <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: '#8250df' }}>INR {fmt(totalCost)}</span>
+//                     </div>
+//                   </div>
+//                 </div>
+//               </div>
+//             </div>
+
+//             {/* Payment Details */}
+//             <div className="col-12">
+//               <div className="client-form-card shadow-sm">
+//                 <h6 style={{ fontWeight: 700, fontSize: 14, marginBottom: 18 }}>
+//                   <i className="bi bi-cash-coin me-2" style={{ color: '#8250df' }}></i>Payment Details
+//                 </h6>
+//                 <div className="row g-3">
+//                   {/* Left: Payment inputs */}
+//                   <div className="col-md-7">
+//                     <div className="row g-3">
+//                       <div className="col-12">
+//                         <label className="form-label" style={{ fontWeight: 600, fontSize: 13 }}>Payment Method</label>
+//                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+//                           {paymentMethods.map(m => (
+//                             <button
+//                               key={m} type="button"
+//                               onClick={() => setForm({ ...form, paymentMethod: m })}
+//                               style={{
+//                                 padding: '6px 16px', borderRadius: 20, fontSize: 13, cursor: 'pointer', fontFamily: 'Sora, sans-serif',
+//                                 border: form.paymentMethod === m ? '1.5px solid #8250df' : '1px solid #d1d5db',
+//                                 background: form.paymentMethod === m ? '#f3e8ff' : '#fff',
+//                                 color: form.paymentMethod === m ? '#7c3INR' : '#64748b',
+//                                 fontWeight: form.paymentMethod === m ? 600 : 400,
+//                               }}
+//                             >{m}</button>
+//                           ))}
+//                         </div>
+//                       </div>
+//                       <div className="col-md-6">
+//                         <label className="form-label">Amount Paid (INR)</label>
+//                         <input type="number" className="form-control" name="amountPaid" value={form.amountPaid} onChange={handleChange} min="0" max={totalCost} />
+//                       </div>
+//                       <div className="col-md-6">
+//                         <label className="form-label">Payment Date</label>
+//                         <input type="date" className="form-control" name="paymentDate" value={form.paymentDate} onChange={handleChange} />
+//                       </div>
+//                       <div className="col-12">
+//                         <label className="form-label">Payment Reference</label>
+//                         <input className="form-control" name="paymentRef" value={form.paymentRef} onChange={handleChange} placeholder="Transaction ID, cheque no., etc." />
+//                       </div>
+//                     </div>
+//                   </div>
+
+//                   {/* Right: Balance Summary */}
+//                   <div className="col-md-5">
+//                     <label className="form-label" style={{ fontWeight: 600, fontSize: 13 }}>Balance Summary</label>
+//                     <div style={{ background: '#f8f7fc', borderRadius: 12, padding: 16, border: '1px solid #e9d5ff' }}>
+//                       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 13, borderBottom: '1px solid #f0e6ff' }}>
+//                         <span style={{ color: '#64748b' }}>Order Total</span>
+//                         <span style={{ fontWeight: 600, fontFamily: 'JetBrains Mono, monospace' }}>INR {fmt(totalCost)}</span>
+//                       </div>
+//                       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 13, borderBottom: '1px solid #f0e6ff' }}>
+//                         <span style={{ color: '#64748b' }}>Amount Paid</span>
+//                         <span style={{ fontWeight: 600, color: '#16a34a', fontFamily: 'JetBrains Mono, monospace' }}>INR {fmt(Number(form.amountPaid))}</span>
+//                       </div>
+//                       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0 4px', fontSize: 15 }}>
+//                         <span style={{ fontWeight: 700 }}>Balance Due</span>
+//                         <span style={{ fontWeight: 700, color: balanceDue > 0 ? '#dc2626' : '#16a34a', fontFamily: 'JetBrains Mono, monospace' }}>
+//                           INR {fmt(balanceDue)}
+//                         </span>
+//                       </div>
+//                     </div>
+//                     {balanceDue > 0 ? (
+//                       <div style={{ marginTop: 10, background: '#fef9c3', border: '1px solid #fde047', borderRadius: 8, padding: '10px 14px' }}>
+//                         <div style={{ fontSize: 12, color: '#a16207', fontWeight: 600 }}>
+//                           <i className="bi bi-exclamation-triangle me-1"></i>Balance remaining after this payment
+//                         </div>
+//                         <div style={{ fontSize: 11, color: '#a16207', marginTop: 2 }}>Supplier will have INR {fmt(balanceDue)} outstanding</div>
+//                       </div>
+//                     ) : totalCost > 0 ? (
+//                       <div style={{ marginTop: 10, background: '#dcfce7', border: '1px solid #86efac', borderRadius: 8, padding: '10px 14px' }}>
+//                         <div style={{ fontSize: 12, color: '#15803d', fontWeight: 600 }}>
+//                           <i className="bi bi-check-circle me-1"></i>Fully paid — no balance due
+//                         </div>
+//                       </div>
+//                     ) : null}
+//                   </div>
+//                 </div>
+//               </div>
+//             </div>
+
+//             {/* Notes */}
+//             <div className="col-12">
+//               <div className="client-form-card shadow-sm">
+//                 <label className="form-label" style={{ fontWeight: 600, fontSize: 13 }}>Notes</label>
+//                 <textarea className="form-control" name="notes" value={form.notes} onChange={handleChange} rows={2} placeholder="Additional notes, delivery instructions, remarks..." />
+//               </div>
+//             </div>
+
+//             {/* Action Buttons */}
+//             <div className="col-12">
+//               <div style={{ display: 'flex', gap: 10 }}>
+//                 <button type="submit" style={{ background: '#8250df', border: 'none', color: 'white', padding: '10px 24px', borderRadius: 8, fontFamily: 'Sora, sans-serif', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+//                   <i className="bi bi-check-lg me-2"></i>Submit Purchase Order
+//                 </button>
+//                 <button type="button" className="btn-reset" onClick={() => setForm({ poNo: '', poDate: new Date().toISOString().split('T')[0], supplier: '', warehouse: 'Main Warehouse', items: [{ itemName: '', sku: '', qty: 1, unit: 'Pcs', costPrice: 0 }], amountPaid: 0, paymentMethod: 'Cash', paymentRef: '', paymentDate: new Date().toISOString().split('T')[0], notes: '' })}>
+//                   <i className="bi bi-arrow-counterclockwise me-2"></i>Reset
+//                 </button>
+//               </div>
+//             </div>
+
+//           </div>
+//         </form>
+//       )}
+
+//       {/* ─────────── TAB: PURCHASE HISTORY ─────────── */}
+//       {activeTab === 'history' && (
+//         <div className="client-form-card shadow-sm">
+//           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+//             <h6 style={{ fontWeight: 700, fontSize: 14, margin: 0 }}>
+//               <i className="bi bi-clock-history me-2" style={{ color: '#8250df' }}></i>All Purchase Orders
+//             </h6>
+//             <div style={{ display: 'flex', gap: 8 }}>
+//               <input
+//                 type="text" className="form-control" placeholder="Search PO, supplier..."
+//                 value={searchQ} onChange={e => setSearchQ(e.target.value)}
+//                 style={{ width: 200, fontSize: 13 }}
+//               />
+//               <select className="form-select" value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ width: 140, fontSize: 13 }}>
+//                 {['All', 'Paid', 'Partial', 'Pending'].map(s => <option key={s}>{s}</option>)}
+//               </select>
 //             </div>
 //           </div>
 
-//           <div className="col-12">
-//             <div style={{ display: 'flex', gap: 10 }}>
-//               <button type="submit" style={{ background: '#8250df', border: 'none', color: 'white', padding: '10px 24px', borderRadius: 8, fontFamily: 'Sora, sans-serif', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
-//                 <i className="bi bi-check-lg me-2"></i>Submit Purchase Order
-//               </button>
-//               <button type="button" className="btn-reset" onClick={() => setForm({ poNo: '', poDate: '', supplier: '', warehouse: '', items: [{ itemName: '', sku: '', qty: 1, unit: 'Pcs', costPrice: 0 }], notes: '' })}>
-//                 <i className="bi bi-arrow-counterclockwise me-2"></i>Reset
-//               </button>
+//           <div className="table-responsive">
+//             <table className="table" style={{ fontSize: 13 }}>
+//               <thead style={{ background: '#f6f8fa' }}>
+//                 <tr>
+//                   <th style={{ fontWeight: 600, color: '#57606a', border: 'none', padding: '10px 12px' }}>PO No.</th>
+//                   <th style={{ fontWeight: 600, color: '#57606a', border: 'none' }}>Date</th>
+//                   <th style={{ fontWeight: 600, color: '#57606a', border: 'none' }}>Supplier</th>
+//                   <th style={{ fontWeight: 600, color: '#57606a', border: 'none' }}>Warehouse</th>
+//                   <th style={{ fontWeight: 600, color: '#57606a', border: 'none' }}>Items</th>
+//                   <th style={{ fontWeight: 600, color: '#57606a', border: 'none' }}>Total (INR)</th>
+//                   <th style={{ fontWeight: 600, color: '#57606a', border: 'none' }}>Paid (INR)</th>
+//                   <th style={{ fontWeight: 600, color: '#57606a', border: 'none' }}>Balance (INR)</th>
+//                   <th style={{ fontWeight: 600, color: '#57606a', border: 'none' }}>Status</th>
+//                   <th style={{ fontWeight: 600, color: '#57606a', border: 'none' }}>Action</th>
+//                 </tr>
+//               </thead>
+//               <tbody>
+//                 {filteredHistory.length === 0 && (
+//                   <tr><td colSpan={10} style={{ textAlign: 'center', color: '#94a3b8', padding: 32 }}>No purchase orders found.</td></tr>
+//                 )}
+//                 {filteredHistory.map(po => {
+//                   const bal = po.totalCost - Number(po.amountPaid);
+//                   return (
+//                     <tr key={po.id} style={{ verticalAlign: 'middle' }}>
+//                       <td style={{ fontWeight: 600, color: '#8250df' }}>{po.poNo}</td>
+//                       <td>{po.poDate}</td>
+//                       <td>{po.supplier || '—'}</td>
+//                       <td>{po.warehouse || '—'}</td>
+//                       <td>{po.items.length} item{po.items.length !== 1 ? 's' : ''}</td>
+//                       <td style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>{fmt(po.totalCost)}</td>
+//                       <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#16a34a', fontWeight: 600 }}>{fmt(Number(po.amountPaid))}</td>
+//                       <td style={{ fontFamily: 'JetBrains Mono, monospace', color: bal > 0 ? '#dc2626' : '#16a34a', fontWeight: 600 }}>{fmt(bal)}</td>
+//                       <td><StatusBadge paid={Number(po.amountPaid)} total={po.totalCost} /></td>
+//                       <td>
+//                         <div style={{ display: 'flex', gap: 6 }}>
+//                           <button type="button" onClick={() => setViewPO(po)} style={{ background: 'none', border: '1px solid #d1d5db', borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', color: '#374151' }}>
+//                             <i className="bi bi-eye me-1"></i>View
+//                           </button>
+//                           {bal > 0 && (
+//                             <button type="button" onClick={() => { setPayingId(po.id); setExtraPayment(''); }} style={{ background: '#8250df', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', color: '#fff' }}>
+//                               <i className="bi bi-cash me-1"></i>Pay
+//                             </button>
+//                           )}
+//                         </div>
+//                       </td>
+//                     </tr>
+//                   );
+//                 })}
+//               </tbody>
+//             </table>
+//           </div>
+//         </div>
+//       )}
+
+//       {/* ─────────── TAB: PENDING PAYMENTS ─────────── */}
+//       {activeTab === 'pending' && (
+//         <div>
+//           <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+//             <StatCard label="Total Outstanding" value={`INR ${fmt(pendingPayments.reduce((s, p) => s + p.totalCost - Number(p.amountPaid), 0))}`} sub={`${pendingPayments.length} orders`} color="red" />
+//             <StatCard label="Partial Payments" value={pendingPayments.filter(p => p.amountPaid > 0).length} sub="Some amount paid" color="amber" />
+//             <StatCard label="Not Paid" value={pendingPayments.filter(p => p.amountPaid == 0).length} sub="Zero payment" color="red" />
+//           </div>
+
+//           <div className="client-form-card shadow-sm">
+//             <h6 style={{ fontWeight: 700, fontSize: 14, marginBottom: 18 }}>
+//               <i className="bi bi-exclamation-circle me-2" style={{ color: '#dc2626' }}></i>Pending & Partial Payments
+//             </h6>
+//             {pendingPayments.length === 0 ? (
+//               <div style={{ textAlign: 'center', padding: 48, color: '#94a3b8' }}>
+//                 <i className="bi bi-check-circle" style={{ fontSize: 36, color: '#16a34a', display: 'block', marginBottom: 10 }}></i>
+//                 All payments are cleared!
+//               </div>
+//             ) : (
+//               <div className="table-responsive">
+//                 <table className="table" style={{ fontSize: 13 }}>
+//                   <thead style={{ background: '#f6f8fa' }}>
+//                     <tr>
+//                       <th style={{ fontWeight: 600, color: '#57606a', border: 'none', padding: '10px 12px' }}>PO No.</th>
+//                       <th style={{ fontWeight: 600, color: '#57606a', border: 'none' }}>Supplier</th>
+//                       <th style={{ fontWeight: 600, color: '#57606a', border: 'none' }}>Order Total</th>
+//                       <th style={{ fontWeight: 600, color: '#57606a', border: 'none' }}>Paid</th>
+//                       <th style={{ fontWeight: 600, color: '#57606a', border: 'none' }}>Balance Due</th>
+//                       <th style={{ fontWeight: 600, color: '#57606a', border: 'none' }}>Payment Method</th>
+//                       <th style={{ fontWeight: 600, color: '#57606a', border: 'none' }}>Status</th>
+//                       <th style={{ fontWeight: 600, color: '#57606a', border: 'none' }}>Action</th>
+//                     </tr>
+//                   </thead>
+//                   <tbody>
+//                     {pendingPayments.map(po => {
+//                       const bal = po.totalCost - Number(po.amountPaid);
+//                       return (
+//                         <tr key={po.id} style={{ verticalAlign: 'middle' }}>
+//                           <td style={{ fontWeight: 600, color: '#8250df' }}>{po.poNo}</td>
+//                           <td>{po.supplier || '—'}</td>
+//                           <td style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>INR {fmt(po.totalCost)}</td>
+//                           <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#16a34a', fontWeight: 600 }}>INR {fmt(Number(po.amountPaid))}</td>
+//                           <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#dc2626', fontWeight: 700 }}>INR {fmt(bal)}</td>
+//                           <td>{po.paymentMethod || '—'}</td>
+//                           <td><StatusBadge paid={Number(po.amountPaid)} total={po.totalCost} /></td>
+//                           <td>
+//                             <button type="button" onClick={() => { setPayingId(po.id); setExtraPayment(''); }} style={{ background: '#8250df', border: 'none', borderRadius: 6, padding: '5px 14px', fontSize: 12, cursor: 'pointer', color: '#fff', fontFamily: 'Sora, sans-serif', fontWeight: 600 }}>
+//                               <i className="bi bi-cash me-1"></i>Pay Now
+//                             </button>
+//                           </td>
+//                         </tr>
+//                       );
+//                     })}
+//                   </tbody>
+//                 </table>
+//               </div>
+//             )}
+//           </div>
+//         </div>
+//       )}
+
+//       {/* ─────────── MODAL: VIEW PO ─────────── */}
+//       {viewPO && (
+//         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+//           <div style={{ background: '#fff', borderRadius: 16, padding: 28, width: '100%', maxWidth: 640, maxHeight: '90vh', overflowY: 'auto' }}>
+//             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+//               <h5 style={{ margin: 0, fontWeight: 700, color: '#8250df' }}>
+//                 <i className="bi bi-file-earmark-text me-2"></i>{viewPO.poNo}
+//               </h5>
+//               <button onClick={() => setViewPO(null)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#64748b' }}>×</button>
+//             </div>
+//             <div className="row g-2" style={{ fontSize: 13, marginBottom: 16 }}>
+//               <div className="col-6"><span style={{ color: '#64748b' }}>Date:</span> <strong>{viewPO.poDate}</strong></div>
+//               <div className="col-6"><span style={{ color: '#64748b' }}>Supplier:</span> <strong>{viewPO.supplier || '—'}</strong></div>
+//               <div className="col-6"><span style={{ color: '#64748b' }}>Warehouse:</span> <strong>{viewPO.warehouse || '—'}</strong></div>
+//               <div className="col-6"><span style={{ color: '#64748b' }}>Payment Method:</span> <strong>{viewPO.paymentMethod || '—'}</strong></div>
+//               {viewPO.paymentRef && <div className="col-12"><span style={{ color: '#64748b' }}>Ref:</span> <strong>{viewPO.paymentRef}</strong></div>}
+//             </div>
+//             <table className="table" style={{ fontSize: 13 }}>
+//               <thead style={{ background: '#f6f8fa' }}>
+//                 <tr>
+//                   <th style={{ color: '#57606a', border: 'none' }}>Item</th>
+//                   <th style={{ color: '#57606a', border: 'none' }}>SKU</th>
+//                   <th style={{ color: '#57606a', border: 'none' }}>Qty</th>
+//                   <th style={{ color: '#57606a', border: 'none' }}>Unit</th>
+//                   <th style={{ color: '#57606a', border: 'none' }}>Rate (INR)</th>
+//                   <th style={{ color: '#57606a', border: 'none' }}>Total (INR)</th>
+//                 </tr>
+//               </thead>
+//               <tbody>
+//                 {viewPO.items.map((it, i) => (
+//                   <tr key={i}>
+//                     <td>{it.itemName}</td>
+//                     <td>{it.sku}</td>
+//                     <td>{it.qty}</td>
+//                     <td>{it.unit}</td>
+//                     <td style={{ fontFamily: 'JetBrains Mono, monospace' }}>{fmt(it.costPrice)}</td>
+//                     <td style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>{fmt(Number(it.qty) * Number(it.costPrice))}</td>
+//                   </tr>
+//                 ))}
+//               </tbody>
+//             </table>
+//             <div style={{ background: '#f8f7fc', borderRadius: 10, padding: 14, marginTop: 8 }}>
+//               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '4px 0' }}>
+//                 <span style={{ color: '#64748b' }}>Order Total</span>
+//                 <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}>INR {fmt(viewPO.totalCost)}</span>
+//               </div>
+//               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '4px 0' }}>
+//                 <span style={{ color: '#64748b' }}>Amount Paid</span>
+//                 <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: '#16a34a' }}>INR {fmt(Number(viewPO.amountPaid))}</span>
+//               </div>
+//               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, padding: '8px 0 0', borderTop: '1px solid #e9d5ff', marginTop: 6 }}>
+//                 <span style={{ fontWeight: 700 }}>Balance Due</span>
+//                 <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: viewPO.totalCost - viewPO.amountPaid > 0 ? '#dc2626' : '#16a34a' }}>
+//                   INR {fmt(viewPO.totalCost - Number(viewPO.amountPaid))}
+//                 </span>
+//               </div>
+//             </div>
+//             {viewPO.notes && <p style={{ fontSize: 12, color: '#64748b', marginTop: 12 }}><strong>Notes:</strong> {viewPO.notes}</p>}
+//             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+//               <button onClick={() => setViewPO(null)} style={{ background: '#8250df', border: 'none', color: '#fff', padding: '8px 20px', borderRadius: 8, fontFamily: 'Sora, sans-serif', fontWeight: 600, cursor: 'pointer' }}>Close</button>
 //             </div>
 //           </div>
 //         </div>
-//       </form>
-//     </>
+//       )}
+
+//       {/* ─────────── MODAL: PAY BALANCE ─────────── */}
+//       {payingId && (() => {
+//         const po = history.find(p => p.id === payingId);
+//         if (!po) return null;
+//         const bal = po.totalCost - Number(po.amountPaid);
+//         const payAmt = Number(extraPayment) || 0;
+//         const newBal = Math.max(0, bal - payAmt);
+//         return (
+//           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+//             <div style={{ background: '#fff', borderRadius: 16, padding: 28, width: '100%', maxWidth: 420 }}>
+//               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+//                 <h5 style={{ margin: 0, fontWeight: 700 }}>
+//                   <i className="bi bi-cash-coin me-2" style={{ color: '#8250df' }}></i>Record Payment
+//                 </h5>
+//                 <button onClick={() => setPayingId(null)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#64748b' }}>×</button>
+//               </div>
+//               <div style={{ background: '#f8f7fc', borderRadius: 10, padding: 14, marginBottom: 16, fontSize: 13 }}>
+//                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+//                   <span style={{ color: '#64748b' }}>PO</span><strong>{po.poNo}</strong>
+//                 </div>
+//                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+//                   <span style={{ color: '#64748b' }}>Supplier</span><strong>{po.supplier || '—'}</strong>
+//                 </div>
+//                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+//                   <span style={{ color: '#64748b' }}>Outstanding Balance</span>
+//                   <strong style={{ color: '#dc2626', fontFamily: 'JetBrains Mono, monospace' }}>INR {fmt(bal)}</strong>
+//                 </div>
+//               </div>
+//               <div style={{ marginBottom: 14 }}>
+//                 <label className="form-label">Amount to Pay (INR)</label>
+//                 <input type="number" className="form-control" value={extraPayment} onChange={e => setExtraPayment(e.target.value)} min="0" max={bal} placeholder={`Max: INR ${fmt(bal)}`} />
+//               </div>
+//               {payAmt > 0 && (
+//                 <div style={{ background: newBal <= 0 ? '#dcfce7' : '#fef9c3', border: `1px solid ${newBal <= 0 ? '#86efac' : '#fde047'}`, borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontSize: 13 }}>
+//                   <div style={{ fontWeight: 600, color: newBal <= 0 ? '#15803d' : '#a16207' }}>
+//                     {newBal <= 0 ? '✓ This will fully settle the balance' : `Remaining after payment: INR ${fmt(newBal)}`}
+//                   </div>
+//                 </div>
+//               )}
+//               <div style={{ display: 'flex', gap: 10 }}>
+//                 <button type="button" onClick={() => setPayingId(null)} style={{ flex: 1, background: 'none', border: '1px solid #d1d5db', borderRadius: 8, padding: '9px 0', cursor: 'pointer', fontFamily: 'Sora, sans-serif', color: '#374151' }}>Cancel</button>
+//                 <button type="button"
+//                   disabled={payAmt <= 0 || payAmt > bal}
+//                   onClick={() => {
+//                     setHistory(history.map(p => p.id === payingId ? { ...p, amountPaid: Number(p.amountPaid) + payAmt } : p));
+//                     setPayingId(null);
+//                     setExtraPayment('');
+//                   }}
+//                   style={{ flex: 1, background: '#8250df', border: 'none', borderRadius: 8, padding: '9px 0', cursor: 'pointer', color: '#fff', fontFamily: 'Sora, sans-serif', fontWeight: 600, opacity: payAmt <= 0 || payAmt > bal ? 0.5 : 1 }}>
+//                   <i className="bi bi-check-lg me-1"></i>Confirm Payment
+//                 </button>
+//               </div>
+//             </div>
+//           </div>
+//         );
+//       })()}
+
+//     </div>
 //   );
 // }
-
-
-
 import { useState } from 'react';
 
 const units = ['Pcs', 'Kg', 'Meter', 'Roll', 'Box', 'Set', 'Liter', 'Ton'];
@@ -513,7 +964,8 @@ export default function PurchaseInventory() {
                   </div>
                   <div>
                     <label style={S.label}>Supplier</label>
-                    <input style={S.input} name="supplier" value={form.supplier} onChange={handleChange} placeholder="Supplier name" list="supplier-list" />
+                    <input style={S.input} name="supplier"  type="" value={form.supplier} onChange={handleChange} placeholder="Supplier name" list="supplier-list" 
+                    onInput={(e) => e.target.value = e.target.value.replace(/[^A-Za-z ]/g, "")} />
                     <datalist id="supplier-list">
                       <option value="Al Faris Trading" /><option value="Gulf Steel Co" /><option value="Emirates Hardware" /><option value="Dubai Metals LLC" />
                     </datalist>
