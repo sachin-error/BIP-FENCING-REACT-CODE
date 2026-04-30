@@ -32,7 +32,7 @@ const clientsData = [
     id: 3, initials: "MH", name: "Mohammed Hassan", email: "m.hassan@gmail.com",
     phone: "+971 52 456 7890", gst: "", company: "",
     type: "Residential", address: "Sharjah", since: "Nov 2024",
-    contractValue: 20500, paid: 8000, pending: 12500, status: "overdue", color: "warning",
+    contractValue: 20500, paid: 8000, pending: 12501, status: "overdue", color: "warning",
     invoices: [
       { id: "INV-001", date: "01 Nov 2024", type: "Advance", amount: 8000, status: "paid" },
       { id: "INV-002", date: "Due: 15 Jan 2025", type: "Balance", amount: 12500, status: "overdue" },
