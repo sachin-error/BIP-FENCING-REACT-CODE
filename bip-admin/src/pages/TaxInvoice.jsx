@@ -1,18 +1,53 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 export default function TaxInvoice() {
+  const [preview, setPreview] = useState(false);
+
   const [form, setForm] = useState({
-    invoiceNo: '',
-    invoiceDate: '',
-    clientName: '',
-    clientPhone: '',
-    clientAddress: '',
-    items: [{ description: '', qty: 1, rate: 0 }],
-    taxPercent: 5,
-    notes: '',
+    companyName: "BIP FENCING CONTRACT WORK",
+    address:
+      "NO. 26/A, MAIN ROAD, PAMBANKULAM, KALANTHAPANAI, PANAGUDI - 627109",
+    gst: "33ABLPI5244C1Z1",
+    state: "Tamil Nadu (Code: 33)",
+
+    invoiceNo: "",
+    date: "",
+    dispatch: "",
+    lrNo: "",
+    vehicle: "",
+
+    consignee: "",
+    buyer: "",
+
+    items: [
+      {
+        description: "",
+        hsn: "",
+        qty: "",
+        rateIncl: "",
+        rateExcl: "",
+        per: "NOS",
+      },
+    ],
+
+    cgst: 9,
+    sgst: 9,
+    roundOff: 0,
+
+    openBalance: "",
+    closingBalance: "",
+
+    bankName: "",
+    accountName: "",
+    accountNo: "",
+    ifsc: "",
+
+    declaration:
+      "We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.",
   });
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleItemChange = (i, field, value) => {
     const items = [...form.items];
@@ -20,167 +55,226 @@ export default function TaxInvoice() {
     setForm({ ...form, items });
   };
 
-  const addItem = () => setForm({ ...form, items: [...form.items, { description: '', qty: 1, rate: 0 }] });
-  const removeItem = (i) => setForm({ ...form, items: form.items.filter((_, idx) => idx !== i) });
+  const addItem = () =>
+    setForm({
+      ...form,
+      items: [
+        ...form.items,
+        { description: "", hsn: "", qty: "", rateIncl: "", rateExcl: "", per: "NOS" },
+      ],
+    });
 
-  const subtotal = form.items.reduce((sum, item) => sum + (Number(item.qty) * Number(item.rate)), 0);
-  const tax = (subtotal * Number(form.taxPercent)) / 100;
-  const total = subtotal + tax;
+  const removeItem = (i) =>
+    setForm({
+      ...form,
+      items: form.items.filter((_, idx) => idx !== i),
+    });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Tax Invoice Data:', { ...form, subtotal, tax, total });
-    alert('Invoice submitted! Check console for data.');
+  const subtotal = form.items.reduce(
+    (sum, item) => sum + item.qty * item.rateExcl,
+    0
+  );
+
+  const cgstAmt = (subtotal * form.cgst) / 100;
+  const sgstAmt = (subtotal * form.sgst) / 100;
+  const taxTotal = cgstAmt + sgstAmt;
+  const total = subtotal + taxTotal + Number(form.roundOff);
+
+  // Amount in words (simple version)
+  const toWords = (num) => {
+    return "INR " + num.toFixed(0) + " Only";
   };
 
   return (
     <>
-      <div className="page-header">
-        <h1><i className="bi bi-file-earmark-text-fill me-2" style={{ color: '#0969da' }}></i>Tax Invoice</h1>
-        <p>Create and manage tax invoices for your clients</p>
-      </div>
+      {/* ================= FORM ================= */}
+      {!preview && (
+        <form className="container mt-3" onSubmit={(e) => { e.preventDefault(); setPreview(true); }}>
+          <h4>Invoice Entry</h4>
 
-      <form onSubmit={handleSubmit}>
-        <div className="row g-3">
+          <input className="form-control mb-2" name="invoiceNo" placeholder="Invoice No" onChange={handleChange} />
+          <input type="date" className="form-control mb-2" name="date" onChange={handleChange} />
+          <input className="form-control mb-2" name="vehicle" placeholder="Vehicle" onChange={handleChange} />
+          <textarea className="form-control mb-2" name="buyer" placeholder="Buyer" onChange={handleChange} />
+          <textarea className="form-control mb-2" name="consignee" placeholder="Consignee" onChange={handleChange} />
 
-          {/* Invoice Info */}
-          <div className="col-12">
-            <div className="client-form-card shadow-sm">
-              <h6 style={{ fontWeight: 700, fontSize: 14, marginBottom: 18, color: '#0d1117' }}>
-                <i className="bi bi-info-circle-fill me-2" style={{ color: '#0969da' }}></i>Invoice Details
-              </h6>
-              <div className="row g-3">
-                <div className="col-md-4">
-                  <label className="form-label">Invoice Number <span style={{ color: 'red' }}>*</span></label>
-                  <input className="form-control" name="invoiceNo" value={form.invoiceNo} onChange={handleChange} placeholder="INV-0001" required />
-                </div>
-                <div className="col-md-4">
-                  <label className="form-label">Invoice Date <span style={{ color: 'red' }}>*</span></label>
-                  <input type="date" className="form-control" name="invoiceDate" value={form.invoiceDate} onChange={handleChange} required />
-                </div>
-                <div className="col-md-4">
-                  <label className="form-label">Tax % (VAT/GST)</label>
-                  <input type="number" className="form-control" name="taxPercent" value={form.taxPercent} onChange={handleChange} min="0" max="100" />
-                </div>
-              </div>
+          <h5>Items</h5>
+
+          {form.items.map((item, i) => (
+            <div className="row mb-2" key={i}>
+              <div className="col"><input placeholder="Desc" className="form-control" onChange={(e)=>handleItemChange(i,"description",e.target.value)} /></div>
+              <div className="col"><input placeholder="HSN" className="form-control" onChange={(e)=>handleItemChange(i,"hsn",e.target.value)} /></div>
+              <div className="col"><input placeholder="Qty" className="form-control" onChange={(e)=>handleItemChange(i,"qty",Number(e.target.value))} /></div>
+              <div className="col"><input placeholder="Rate Excl" className="form-control" onChange={(e)=>handleItemChange(i,"rateExcl",Number(e.target.value))} /></div>
+              <div className="col"><button type="button" className="btn btn-danger" onClick={()=>removeItem(i)}>X</button></div>
+            </div>
+          ))}
+
+          <button type="button" className="btn btn-secondary" onClick={addItem}>Add Item</button>
+
+          <br /><br />
+          <button className="btn btn-primary">Preview</button>
+        </form>
+      )}
+
+      {/* ================= INVOICE ================= */}
+      {preview && (
+        <div className="invoice" id="invoice">
+
+          <div className="header text-center">
+            <h3>{form.companyName}</h3>
+            <p>{form.address}</p>
+            <p>GSTIN: {form.gst} | {form.state}</p>
+            <h5>TAX INVOICE</h5>
+          </div>
+
+          <div className="section">
+            <div>
+              <b>Buyer:</b><br />{form.buyer}
+              <br /><br />
+              <b>Consignee:</b><br />{form.consignee}
+            </div>
+
+            <div>
+              <p>Invoice: {form.invoiceNo}</p>
+              <p>Date: {form.date}</p>
+              <p>Vehicle: {form.vehicle}</p>
             </div>
           </div>
 
-          {/* Client Info */}
-          <div className="col-12">
-            <div className="client-form-card shadow-sm">
-              <h6 style={{ fontWeight: 700, fontSize: 14, marginBottom: 18, color: '#0d1117' }}>
-                <i className="bi bi-person-fill me-2" style={{ color: '#0969da' }}></i>Client Information
-              </h6>
-              <div className="row g-3">
-                <div className="col-md-6">
-                  <label className="form-label">Client Name <span style={{ color: 'red' }}>*</span></label>
-                  <input className="form-control" name="clientName" value={form.clientName} onChange={handleChange} placeholder="Client full name" required />
-                </div>
-                <div className="col-md-6">
-                  <label className="form-label">Phone</label>
-                  <input className="form-control" name="clientPhone" value={form.clientPhone} onChange={handleChange} placeholder="+971 50 000 0000" />
-                </div>
-                <div className="col-12">
-                  <label className="form-label">Address</label>
-                  <textarea className="form-control" name="clientAddress" value={form.clientAddress} onChange={handleChange} rows={2} placeholder="Client address..." />
-                </div>
-              </div>
+          {/* ITEMS TABLE */}
+          <table className="invoice-table">
+            <thead>
+              <tr>
+                <th>Sl</th>
+                <th>Description</th>
+                <th>HSN</th>
+                <th>Qty</th>
+                <th>Rate</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {form.items.map((item, i) => (
+                <tr key={i}>
+                  <td>{i + 1}</td>
+                  <td>{item.description}</td>
+                  <td>{item.hsn}</td>
+                  <td>{item.qty}</td>
+                  <td>{item.rateExcl}</td>
+                  <td>{item.qty * item.rateExcl}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* TAX SECTION */}
+          <div className="tax-box">
+            <p>Taxable Value: ₹ {subtotal.toFixed(2)}</p>
+            <p>CGST ({form.cgst}%): ₹ {cgstAmt.toFixed(2)}</p>
+            <p>SGST ({form.sgst}%): ₹ {sgstAmt.toFixed(2)}</p>
+            <p>Rounding Off: ₹ {form.roundOff}</p>
+            <h5>Grand Total: ₹ {total.toFixed(2)}</h5>
+          </div>
+
+          {/* TAX TABLE */}
+          <table className="invoice-table mt-3">
+            <thead>
+              <tr>
+                <th>HSN/SAC</th>
+                <th>Taxable Value</th>
+                <th>CGST</th>
+                <th>SGST</th>
+                <th>Total Tax</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>{form.items[0]?.hsn}</td>
+                <td>{subtotal.toFixed(2)}</td>
+                <td>{cgstAmt.toFixed(2)}</td>
+                <td>{sgstAmt.toFixed(2)}</td>
+                <td>{taxTotal.toFixed(2)}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p><b>Amount in Words:</b> {toWords(total)}</p>
+          <p><b>Tax Amount in Words:</b> {toWords(taxTotal)}</p>
+
+          <p>Open Balance: {form.openBalance}</p>
+          <p>Closing Balance: {form.closingBalance}</p>
+
+          <div className="footer">
+            <p>{form.declaration}</p>
+
+            <div className="sign">
+              <span>Receiver Signature</span>
+              <span>Authorised Signatory</span>
             </div>
           </div>
 
-          {/* Items Table */}
-          <div className="col-12">
-            <div className="client-form-card shadow-sm">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-                <h6 style={{ fontWeight: 700, fontSize: 14, margin: 0, color: '#0d1117' }}>
-                  <i className="bi bi-list-ul me-2" style={{ color: '#0969da' }}></i>Line Items
-                </h6>
-                <button type="button" className="btn-submit" style={{ padding: '6px 14px', fontSize: 12 }} onClick={addItem}>
-                  <i className="bi bi-plus-lg me-1"></i>Add Item
-                </button>
-              </div>
-
-              <div className="table-responsive">
-                <table className="table" style={{ fontSize: 13.5 }}>
-                  <thead style={{ background: '#f6f8fa' }}>
-                    <tr>
-                      <th style={{ fontWeight: 600, color: '#57606a', border: 'none', padding: '10px 12px' }}>#</th>
-                      <th style={{ fontWeight: 600, color: '#57606a', border: 'none' }}>Description</th>
-                      <th style={{ fontWeight: 600, color: '#57606a', border: 'none', width: 100 }}>Qty</th>
-                      <th style={{ fontWeight: 600, color: '#57606a', border: 'none', width: 130 }}>Rate (AED)</th>
-                      <th style={{ fontWeight: 600, color: '#57606a', border: 'none', width: 130 }}>Amount</th>
-                      <th style={{ border: 'none', width: 50 }}></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {form.items.map((item, i) => (
-                      <tr key={i}>
-                        <td style={{ color: '#57606a', verticalAlign: 'middle', padding: '8px 12px' }}>{i + 1}</td>
-                        <td>
-                          <input className="form-control form-control-sm" value={item.description} onChange={e => handleItemChange(i, 'description', e.target.value)} placeholder="Item description" />
-                        </td>
-                        <td>
-                          <input type="number" className="form-control form-control-sm" value={item.qty} onChange={e => handleItemChange(i, 'qty', e.target.value)} min="1" />
-                        </td>
-                        <td>
-                          <input type="number" className="form-control form-control-sm" value={item.rate} onChange={e => handleItemChange(i, 'rate', e.target.value)} min="0" />
-                        </td>
-                        <td style={{ verticalAlign: 'middle', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace' }}>
-                          AED {(Number(item.qty) * Number(item.rate)).toFixed(2)}
-                        </td>
-                        <td style={{ verticalAlign: 'middle' }}>
-                          {form.items.length > 1 && (
-                            <button type="button" onClick={() => removeItem(i)} style={{ background: 'none', border: 'none', color: '#cf222e', cursor: 'pointer', fontSize: 16 }}>
-                              <i className="bi bi-trash3"></i>
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Totals */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
-                <div style={{ minWidth: 280, background: '#f6f8fa', borderRadius: 10, padding: 16 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, marginBottom: 6 }}>
-                    <span style={{ color: '#57606a' }}>Subtotal</span>
-                    <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>AED {subtotal.toFixed(2)}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, marginBottom: 8 }}>
-                    <span style={{ color: '#57606a' }}>Tax ({form.taxPercent}%)</span>
-                    <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>AED {tax.toFixed(2)}</span>
-                  </div>
-                  <div style={{ height: 1, background: '#d0d7de', marginBottom: 8 }}></div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15 }}>
-                    <span style={{ fontWeight: 700 }}>Total</span>
-                    <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: '#0969da' }}>AED {total.toFixed(2)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div className="col-12">
-            <div className="client-form-card shadow-sm">
-              <label className="form-label" style={{ fontWeight: 600, fontSize: 13 }}>Notes / Terms</label>
-              <textarea className="form-control" name="notes" value={form.notes} onChange={handleChange} rows={2} placeholder="Payment terms, notes..." />
-            </div>
-          </div>
-
-          <div className="col-12">
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button type="submit" className="btn-submit"><i className="bi bi-check-lg me-2"></i>Submit Invoice</button>
-              <button type="button" className="btn-reset" onClick={() => setForm({ invoiceNo: '', invoiceDate: '', clientName: '', clientPhone: '', clientAddress: '', items: [{ description: '', qty: 1, rate: 0 }], taxPercent: 5, notes: '' })}>
-                <i className="bi bi-arrow-counterclockwise me-2"></i>Reset
-              </button>
-            </div>
+          <div className="no-print mt-3">
+            <button className="btn btn-secondary" onClick={() => setPreview(false)}>Edit</button>
+            <button className="btn btn-success ms-2" onClick={() => window.print()}>
+              Print
+            </button>
           </div>
         </div>
-      </form>
+      )}
+
+      {/* ================= CSS ================= */}
+      <style>{`
+        .invoice {
+          width: 800px;
+          margin: auto;
+          padding: 20px;
+          border: 1px solid #000;
+          font-size: 13px;
+        }
+
+        .header { text-align: center; }
+
+        .section {
+          display: flex;
+          justify-content: space-between;
+          margin-top: 10px;
+        }
+
+        .invoice-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 10px;
+        }
+
+        .invoice-table th, .invoice-table td {
+          border: 1px solid #000;
+          padding: 5px;
+          text-align: center;
+        }
+
+        .tax-box {
+          text-align: right;
+          margin-top: 10px;
+        }
+
+        .footer {
+          margin-top: 20px;
+        }
+
+        .sign {
+          display: flex;
+          justify-content: space-between;
+          margin-top: 40px;
+        }
+
+        @media print {
+          body * { visibility: hidden; }
+          #invoice, #invoice * { visibility: visible; }
+          #invoice { position: absolute; top: 0; left: 0; width: 100%; }
+          .no-print { display: none; }
+        }
+      `}</style>
     </>
   );
 }
