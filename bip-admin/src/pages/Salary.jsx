@@ -709,6 +709,10 @@ export default function Salary() {
       })()}
     </>
   );
+<<<<<<< HEAD
 }
 
 // this is updated by rahul for tesing 
+=======
+}
+>>>>>>> origin/testbranch
