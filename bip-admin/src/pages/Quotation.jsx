@@ -104,7 +104,7 @@ export default function Quotation() {
                       <th style={{ fontWeight: 600, color: '#57606a', border: 'none', padding: '10px 12px' }}>#</th>
                       <th style={{ fontWeight: 600, color: '#57606a', border: 'none' }}>Description</th>
                       <th style={{ fontWeight: 600, color: '#57606a', border: 'none', width: 100 }}>Qty</th>
-                      <th style={{ fontWeight: 600, color: '#57606a', border: 'none', width: 130 }}>Rate (AED)</th>
+                      <th style={{ fontWeight: 600, color: '#57606a', border: 'none', width: 130 }}>Rate (INR)</th>
                       <th style={{ fontWeight: 600, color: '#57606a', border: 'none', width: 130 }}>Amount</th>
                       <th style={{ border: 'none', width: 50 }}></th>
                     </tr>
@@ -116,7 +116,7 @@ export default function Quotation() {
                         <td><input className="form-control form-control-sm" value={item.description} onChange={e => handleItemChange(i, 'description', e.target.value)} placeholder="Service / Product" /></td>
                         <td><input type="number" className="form-control form-control-sm" value={item.qty} onChange={e => handleItemChange(i, 'qty', e.target.value)} min="1" /></td>
                         <td><input type="number" className="form-control form-control-sm" value={item.rate} onChange={e => handleItemChange(i, 'rate', e.target.value)} min="0" /></td>
-                        <td style={{ verticalAlign: 'middle', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace' }}>AED {(Number(item.qty) * Number(item.rate)).toFixed(2)}</td>
+                        <td style={{ verticalAlign: 'middle', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace' }}>INR {(Number(item.qty) * Number(item.rate)).toFixed(2)}</td>
                         <td style={{ verticalAlign: 'middle' }}>
                           {form.items.length > 1 && <button type="button" onClick={() => removeItem(i)} style={{ background: 'none', border: 'none', color: '#cf222e', cursor: 'pointer', fontSize: 16 }}><i className="bi bi-trash3"></i></button>}
                         </td>
@@ -127,7 +127,7 @@ export default function Quotation() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
                 <div style={{ minWidth: 300, background: '#f6f8fa', borderRadius: 10, padding: 16 }}>
-                  {[['Subtotal', `AED ${subtotal.toFixed(2)}`, ''], [`Discount (${form.discount}%)`, `- AED ${discountAmt.toFixed(2)}`, '#cf222e'], [`Tax (${form.taxPercent}%)`, `AED ${taxAmt.toFixed(2)}`, '']].map(([l, v, c], i) => (
+                  {[['Subtotal', `INR ${subtotal.toFixed(2)}`, ''], [`Discount (${form.discount}%)`, `- INR ${discountAmt.toFixed(2)}`, '#cf222e'], [`Tax (${form.taxPercent}%)`, `INR ${taxAmt.toFixed(2)}`, '']].map(([l, v, c], i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, marginBottom: 6 }}>
                       <span style={{ color: '#57606a' }}>{l}</span>
                       <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 600, color: c || '#24292f' }}>{v}</span>
@@ -136,7 +136,7 @@ export default function Quotation() {
                   <div style={{ height: 1, background: '#d0d7de', margin: '8px 0' }}></div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15 }}>
                     <span style={{ fontWeight: 700 }}>Grand Total</span>
-                    <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: '#bc4c00' }}>AED {total.toFixed(2)}</span>
+                    <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: '#bc4c00' }}>INR {total.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
