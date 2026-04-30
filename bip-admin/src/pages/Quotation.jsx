@@ -32,8 +32,8 @@ export default function Quotation() {
         <p>Create and send quotations to potential clients</p>
       </div>
 
-      <form onSubmit={handleSubmit}>
-        <div className="row g-3">
+      <form onSubmit={handleSubmit} className="container-fluid px-4 mt-3">
+        <div className="row g-3 w-100">
 
           <div className="col-12">
             <div className="client-form-card shadow-sm">
@@ -165,3 +165,221 @@ export default function Quotation() {
     </>
   );
 }
+
+
+// import { useState } from "react";
+
+// export default function Quotation() {
+//   const [form, setForm] = useState({
+//     quoteNo: "",
+//     quoteDate: "",
+//     validUntil: "",
+
+//     clientName: "",
+//     clientPhone: "",
+//     clientEmail: "",
+//     contactPerson: "",
+//     siteLocation: "",
+
+//     projectTitle: "",
+
+//     items: [
+//       {
+//         description: "",
+//         qty: 1,
+//         unit: "Nos",
+//         rate: 0,
+//         discount: 0,
+//       },
+//     ],
+
+//     taxPercent: 18,
+//     discount: 0,
+//     notes: "",
+//     terms: "",
+//   });
+
+//   const handleChange = (e) =>
+//     setForm({ ...form, [e.target.name]: e.target.value });
+
+//   const handleItemChange = (i, field, value) => {
+//     const items = [...form.items];
+//     items[i][field] = value;
+//     setForm({ ...form, items });
+//   };
+
+//   const addItem = () =>
+//     setForm({
+//       ...form,
+//       items: [
+//         ...form.items,
+//         { description: "", qty: 1, unit: "Nos", rate: 0, discount: 0 },
+//       ],
+//     });
+
+//   const removeItem = (i) =>
+//     setForm({
+//       ...form,
+//       items: form.items.filter((_, idx) => idx !== i),
+//     });
+
+//   // CALCULATIONS
+//   const subtotal = form.items.reduce(
+//     (s, it) => s + it.qty * it.rate,
+//     0
+//   );
+
+//   const itemDiscount = form.items.reduce(
+//     (s, it) => s + (it.qty * it.rate * it.discount) / 100,
+//     0
+//   );
+
+//   const overallDiscount = ((subtotal - itemDiscount) * form.discount) / 100;
+
+//   const taxable = subtotal - itemDiscount - overallDiscount;
+
+//   const taxAmt = (taxable * form.taxPercent) / 100;
+
+//   const total = taxable + taxAmt;
+
+//   const handleSubmit = (e) => {
+//     e.preventDefault();
+//     console.log("Quotation:", { ...form, subtotal, total });
+//     alert("Quotation saved!");
+//   };
+
+//   return (
+//     <form onSubmit={handleSubmit} className="container-fluid mt-3">
+//       <div className="row g-3">
+
+//         {/* HEADER */}
+//         <div className="col-12 text-center">
+//           <h3>BIP FENCING CONTRACT WORK</h3>
+//           <p style={{ fontSize: 13 }}>
+//             Panagudi | Phone: 9655072445
+//           </p>
+//           <h5 className="mt-2">QUOTATION</h5>
+//         </div>
+
+//         {/* QUOTE DETAILS */}
+//         <div className="col-md-4">
+//           <input className="form-control" name="quoteNo" placeholder="Quote No" onChange={handleChange} />
+//         </div>
+//         <div className="col-md-4">
+//           <input type="date" className="form-control" name="quoteDate" onChange={handleChange} />
+//         </div>
+//         <div className="col-md-4">
+//           <input type="date" className="form-control" name="validUntil" onChange={handleChange} />
+//         </div>
+
+//         {/* CLIENT */}
+//         <div className="col-md-6">
+//           <input className="form-control" name="clientName" placeholder="Client Name" onChange={handleChange} />
+//         </div>
+//         <div className="col-md-6">
+//           <input className="form-control" name="contactPerson" placeholder="Contact Person" onChange={handleChange} />
+//         </div>
+//         <div className="col-md-6">
+//           <input className="form-control" name="clientPhone" placeholder="Phone" onChange={handleChange} />
+//         </div>
+//         <div className="col-md-6">
+//           <input className="form-control" name="clientEmail" placeholder="Email" onChange={handleChange} />
+//         </div>
+
+//         {/* PROJECT */}
+//         <div className="col-12">
+//           <input className="form-control" name="projectTitle" placeholder="Project / Work Description" onChange={handleChange} />
+//         </div>
+
+//         <div className="col-12">
+//           <textarea className="form-control" name="siteLocation" placeholder="Site Location" onChange={handleChange} />
+//         </div>
+
+//         {/* ITEMS */}
+//         <div className="col-12">
+//           <div className="table-responsive">
+//             <table className="table table-bordered text-center">
+//               <thead>
+//                 <tr>
+//                   <th>#</th>
+//                   <th>Description</th>
+//                   <th>Qty</th>
+//                   <th>Unit</th>
+//                   <th>Rate</th>
+//                   <th>Disc %</th>
+//                   <th>Amount</th>
+//                   <th></th>
+//                 </tr>
+//               </thead>
+
+//               <tbody>
+//                 {form.items.map((item, i) => (
+//                   <tr key={i}>
+//                     <td>{i + 1}</td>
+
+//                     <td>
+//                       <input className="form-control" onChange={(e)=>handleItemChange(i,"description",e.target.value)} />
+//                     </td>
+
+//                     <td>
+//                       <input type="number" className="form-control" onChange={(e)=>handleItemChange(i,"qty",Number(e.target.value))} />
+//                     </td>
+
+//                     <td>
+//                       <input className="form-control" onChange={(e)=>handleItemChange(i,"unit",e.target.value)} />
+//                     </td>
+
+//                     <td>
+//                       <input type="number" className="form-control" onChange={(e)=>handleItemChange(i,"rate",Number(e.target.value))} />
+//                     </td>
+
+//                     <td>
+//                       <input type="number" className="form-control" onChange={(e)=>handleItemChange(i,"discount",Number(e.target.value))} />
+//                     </td>
+
+//                     <td>
+//                       ₹ {(item.qty * item.rate).toFixed(2)}
+//                     </td>
+
+//                     <td>
+//                       <button type="button" className="btn btn-danger btn-sm" onClick={()=>removeItem(i)}>X</button>
+//                     </td>
+//                   </tr>
+//                 ))}
+//               </tbody>
+//             </table>
+//           </div>
+
+//           <button type="button" className="btn btn-secondary btn-sm" onClick={addItem}>
+//             Add Item
+//           </button>
+//         </div>
+
+//         {/* SUMMARY */}
+//         <div className="col-md-4 offset-md-8">
+//           <div className="border p-3">
+//             <p>Subtotal: ₹ {subtotal.toFixed(2)}</p>
+//             <p>Item Discount: ₹ {itemDiscount.toFixed(2)}</p>
+//             <p>Overall Discount: ₹ {overallDiscount.toFixed(2)}</p>
+//             <p>Tax ({form.taxPercent}%): ₹ {taxAmt.toFixed(2)}</p>
+//             <h5>Total: ₹ {total.toFixed(2)}</h5>
+//           </div>
+//         </div>
+
+//         {/* TERMS */}
+//         <div className="col-12">
+//           <textarea className="form-control" name="terms" placeholder="Terms & Conditions" onChange={handleChange} />
+//         </div>
+
+//         <div className="col-12">
+//           <textarea className="form-control" name="notes" placeholder="Notes" onChange={handleChange} />
+//         </div>
+
+//         {/* SUBMIT */}
+//         <div className="col-12">
+//           <button className="btn btn-success">Save Quotation</button>
+//         </div>
+//       </div>
+//     </form>
+//   );
+// }

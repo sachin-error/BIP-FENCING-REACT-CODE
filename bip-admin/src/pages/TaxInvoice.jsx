@@ -1,280 +1,1101 @@
-import { useState } from "react";
+// import { useState } from "react";
 
+// export default function TaxInvoice() {
+//   const [preview, setPreview] = useState(false);
+
+//   const [form, setForm] = useState({
+//     companyName: "BIP FENCING CONTRACT WORK",
+//     address:
+//       "NO. 26/A, MAIN ROAD, PAMBANKULAM, KALANTHAPANAI, PANAGUDI - 627109",
+//     gst: "33ABLPI5244C1Z1",
+//     state: "Tamil Nadu (Code: 33)",
+
+//     invoiceNo: "",
+//     date: "",
+//     dispatch: "",
+//     lrNo: "",
+//     vehicle: "",
+
+//     consignee: "",
+//     buyer: "",
+
+//     items: [
+//       {
+//         description: "",
+//         hsn: "",
+//         qty: "",
+//         rateIncl: "",
+//         rateExcl: "",
+//         per: "NOS",
+//       },
+//     ],
+
+//     cgst: 9,
+//     sgst: 9,
+//     roundOff: 0,
+
+//     openBalance: "",
+//     closingBalance: "",
+
+//     bankName: "",
+//     accountName: "",
+//     accountNo: "",
+//     ifsc: "",
+
+//     declaration:
+//       "We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.",
+//   });
+
+//   const handleChange = (e) =>
+//     setForm({ ...form, [e.target.name]: e.target.value });
+
+//   const handleItemChange = (i, field, value) => {
+//     const items = [...form.items];
+//     items[i][field] = value;
+//     setForm({ ...form, items });
+//   };
+
+//   const addItem = () =>
+//     setForm({
+//       ...form,
+//       items: [
+//         ...form.items,
+//         { description: "", hsn: "", qty: "", rateIncl: "", rateExcl: "", per: "NOS" },
+//       ],
+//     });
+
+//   const removeItem = (i) =>
+//     setForm({
+//       ...form,
+//       items: form.items.filter((_, idx) => idx !== i),
+//     });
+
+//   const subtotal = form.items.reduce(
+//     (sum, item) => sum + item.qty * item.rateExcl,
+//     0
+//   );
+
+//   const cgstAmt = (subtotal * form.cgst) / 100;
+//   const sgstAmt = (subtotal * form.sgst) / 100;
+//   const taxTotal = cgstAmt + sgstAmt;
+//   const total = subtotal + taxTotal + Number(form.roundOff);
+
+//   // Amount in words (simple version)
+//   const toWords = (num) => {
+//     return "INR " + num.toFixed(0) + " Only";
+//   };
+
+//   return (
+//     <>
+//       {/* ================= FORM ================= */}
+//       {!preview && (
+//         <form className="container mt-3" onSubmit={(e) => { e.preventDefault(); setPreview(true); }}>
+//           <h4>Invoice Entry</h4>
+
+//           <input className="form-control mb-2" name="invoiceNo" placeholder="Invoice No" onChange={handleChange} />
+//           <input type="date" className="form-control mb-2" name="date" onChange={handleChange} />
+//           <input className="form-control mb-2" name="vehicle" placeholder="Vehicle" onChange={handleChange} />
+//           <textarea className="form-control mb-2" name="buyer" placeholder="Buyer" onChange={handleChange} />
+//           <textarea className="form-control mb-2" name="consignee" placeholder="Consignee" onChange={handleChange} />
+
+//           <h5>Items</h5>
+
+//           {form.items.map((item, i) => (
+//             <div className="row mb-2" key={i}>
+//               <div className="col"><input placeholder="Desc" className="form-control" onChange={(e)=>handleItemChange(i,"description",e.target.value)} /></div>
+//               <div className="col"><input placeholder="HSN" className="form-control" onChange={(e)=>handleItemChange(i,"hsn",e.target.value)} /></div>
+//               <div className="col"><input placeholder="Qty" className="form-control" onChange={(e)=>handleItemChange(i,"qty",Number(e.target.value))} /></div>
+//               <div className="col"><input placeholder="Rate Excl" className="form-control" onChange={(e)=>handleItemChange(i,"rateExcl",Number(e.target.value))} /></div>
+//               <div className="col"><button type="button" className="btn btn-danger" onClick={()=>removeItem(i)}>X</button></div>
+//             </div>
+//           ))}
+
+//           <button type="button" className="btn btn-secondary" onClick={addItem}>Add Item</button>
+
+//           <br /><br />
+//           <button className="btn btn-primary">Preview</button>
+//         </form>
+//       )}
+
+//       {/* ================= INVOICE ================= */}
+//       {preview && (
+//         <div className="invoice" id="invoice">
+
+//           <div className="header text-center">
+//             <h3>{form.companyName}</h3>
+//             <p>{form.address}</p>
+//             <p>GSTIN: {form.gst} | {form.state}</p>
+//             <h5>TAX INVOICE</h5>
+//           </div>
+
+//           <div className="section">
+//             <div>
+//               <b>Buyer:</b><br />{form.buyer}
+//               <br /><br />
+//               <b>Consignee:</b><br />{form.consignee}
+//             </div>
+
+//             <div>
+//               <p>Invoice: {form.invoiceNo}</p>
+//               <p>Date: {form.date}</p>
+//               <p>Vehicle: {form.vehicle}</p>
+//             </div>
+//           </div>
+
+//           {/* ITEMS TABLE */}
+//           <table className="invoice-table">
+//             <thead>
+//               <tr>
+//                 <th>Sl</th>
+//                 <th>Description</th>
+//                 <th>HSN</th>
+//                 <th>Qty</th>
+//                 <th>Rate</th>
+//                 <th>Amount</th>
+//               </tr>
+//             </thead>
+//             <tbody>
+//               {form.items.map((item, i) => (
+//                 <tr key={i}>
+//                   <td>{i + 1}</td>
+//                   <td>{item.description}</td>
+//                   <td>{item.hsn}</td>
+//                   <td>{item.qty}</td>
+//                   <td>{item.rateExcl}</td>
+//                   <td>{item.qty * item.rateExcl}</td>
+//                 </tr>
+//               ))}
+//             </tbody>
+//           </table>
+
+//           {/* TAX SECTION */}
+//           <div className="tax-box">
+//             <p>Taxable Value: ₹ {subtotal.toFixed(2)}</p>
+//             <p>CGST ({form.cgst}%): ₹ {cgstAmt.toFixed(2)}</p>
+//             <p>SGST ({form.sgst}%): ₹ {sgstAmt.toFixed(2)}</p>
+//             <p>Rounding Off: ₹ {form.roundOff}</p>
+//             <h5>Grand Total: ₹ {total.toFixed(2)}</h5>
+//           </div>
+
+//           {/* TAX TABLE */}
+//           <table className="invoice-table mt-3">
+//             <thead>
+//               <tr>
+//                 <th>HSN/SAC</th>
+//                 <th>Taxable Value</th>
+//                 <th>CGST</th>
+//                 <th>SGST</th>
+//                 <th>Total Tax</th>
+//               </tr>
+//             </thead>
+//             <tbody>
+//               <tr>
+//                 <td>{form.items[0]?.hsn}</td>
+//                 <td>{subtotal.toFixed(2)}</td>
+//                 <td>{cgstAmt.toFixed(2)}</td>
+//                 <td>{sgstAmt.toFixed(2)}</td>
+//                 <td>{taxTotal.toFixed(2)}</td>
+//               </tr>
+//             </tbody>
+//           </table>
+
+//           <p><b>Amount in Words:</b> {toWords(total)}</p>
+//           <p><b>Tax Amount in Words:</b> {toWords(taxTotal)}</p>
+
+//           <p>Open Balance: {form.openBalance}</p>
+//           <p>Closing Balance: {form.closingBalance}</p>
+
+//           <div className="footer">
+//             <p>{form.declaration}</p>
+
+//             <div className="sign">
+//               <span>Receiver Signature</span>
+//               <span>Authorised Signatory</span>
+//             </div>
+//           </div>
+
+//           <div className="no-print mt-3">
+//             <button className="btn btn-secondary" onClick={() => setPreview(false)}>Edit</button>
+//             <button className="btn btn-success ms-2" onClick={() => window.print()}>
+//               Print
+//             </button>
+//           </div>
+//         </div>
+//       )}
+
+//       {/* ================= CSS ================= */}
+//       <style>{`
+//         .invoice {
+//           width: 800px;
+//           margin: auto;
+//           padding: 20px;
+//           border: 1px solid #000;
+//           font-size: 13px;
+//         }
+
+//         .header { text-align: center; }
+
+//         .section {
+//           display: flex;
+//           justify-content: space-between;
+//           margin-top: 10px;
+//         }
+
+//         .invoice-table {
+//           width: 100%;
+//           border-collapse: collapse;
+//           margin-top: 10px;
+//         }
+
+//         .invoice-table th, .invoice-table td {
+//           border: 1px solid #000;
+//           padding: 5px;
+//           text-align: center;
+//         }
+
+//         .tax-box {
+//           text-align: right;
+//           margin-top: 10px;
+//         }
+
+//         .footer {
+//           margin-top: 20px;
+//         }
+
+//         .sign {
+//           display: flex;
+//           justify-content: space-between;
+//           margin-top: 40px;
+//         }
+
+//         @media print {
+//           body * { visibility: hidden; }
+//           #invoice, #invoice * { visibility: visible; }
+//           #invoice { position: absolute; top: 0; left: 0; width: 100%; }
+//           .no-print { display: none; }
+//         }
+//       `}</style>
+//     </>
+//   );
+// }
+
+
+import React, { useState } from "react";
+
+// ─── STATIC COMPANY DATA ────────────────────────────────────────────────────
+const COMPANY = {
+  name: "BIP FENCING CONTRACT WORK",
+  address: "NO. 26/A, MAIN ROAD, PAMBANKULAM, KALANTHAPANAI, PANAGUDI - 627109",
+  gst: "33ABLPI5244C1Z1",
+  state: "Tamil Nadu",
+  stateCode: "33",
+  phone: "9655072445",
+};
+
+const DEFAULT_BANK = {
+  holderName: "BIP FENCING CONTRACT WORK",
+  bankName: "CANARA BANK",
+  accountNo: "120017946948",
+  ifsc: "CNRB0003657",
+  branch: "THERKU VALLIOOR",
+};
+
+const DECLARATION =
+  "We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.";
+
+const COPY_TYPES = [
+  "ORIGINAL FOR RECIPIENT",
+  "DUPLICATE FOR TRANSPORTER",
+  "TRIPLICATE FOR SUPPLIER",
+];
+
+// ─── NUMBER TO WORDS (Indian) ────────────────────────────────────────────────
+const _ones = [
+  "", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
+  "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen",
+  "Seventeen", "Eighteen", "Nineteen",
+];
+const _tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+function numToWords(n) {
+  const num = Math.round(n);
+  if (num === 0) return "Zero";
+  if (num < 0) return "Minus " + numToWords(-num);
+  if (num < 20) return _ones[num];
+  if (num < 100) return _tens[Math.floor(num / 10)] + (num % 10 ? " " + _ones[num % 10] : "");
+  if (num < 1000)
+    return _ones[Math.floor(num / 100)] + " Hundred" + (num % 100 ? " " + numToWords(num % 100) : "");
+  if (num < 100000)
+    return numToWords(Math.floor(num / 1000)) + " Thousand" + (num % 1000 ? " " + numToWords(num % 1000) : "");
+  if (num < 10000000)
+    return numToWords(Math.floor(num / 100000)) + " Lakh" + (num % 100000 ? " " + numToWords(num % 100000) : "");
+  return numToWords(Math.floor(num / 10000000)) + " Crore" + (num % 10000000 ? " " + numToWords(num % 10000000) : "");
+}
+
+function amountInWords(amount) {
+  const n = Math.round(amount * 100);
+  const rupees = Math.floor(n / 100);
+  const paise = n % 100;
+  if (paise > 0)
+    return "INR " + numToWords(rupees) + " and " + numToWords(paise) + " Paise Only";
+  return "INR " + numToWords(rupees) + " Only";
+}
+
+// ─── HELPERS ────────────────────────────────────────────────────────────────
+const fmt2 = (n) =>
+  Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const formatDate = (d) => {
+  if (!d) return "";
+  const dt = new Date(d + "T00:00:00");
+  return dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit" });
+};
+
+const emptyProduct = () => ({ desc: "", hsn: "", qty: "", rateIncl: "", per: "NOS" });
+
+// ─── PRINT STYLES ────────────────────────────────────────────────────────────
+const printStyles = `
+@media print {
+  body * { visibility: hidden !important; }
+  #bip-invoice-print, #bip-invoice-print * { visibility: visible !important; }
+  #bip-invoice-print {
+    position: fixed !important;
+    top: 0; left: 0;
+    width: 100%;
+    margin: 0; padding: 0;
+    box-shadow: none !important;
+  }
+  .no-print { display: none !important; }
+  @page { size: A4 portrait; margin: 8mm; }
+}
+`;
+
+// ─── SHARED CELL STYLE ──────────────────────────────────────────────────────
+const cell = (extra = {}) => ({
+  border: "1px solid #000",
+  padding: "3px 5px",
+  fontSize: 12,
+  verticalAlign: "top",
+  ...extra,
+});
+
+const sectionHead = {
+  fontWeight: "bold",
+  fontSize: 11,
+  textTransform: "uppercase",
+  letterSpacing: 0.5,
+  marginBottom: 3,
+  borderBottom: "1px dashed #999",
+  paddingBottom: 2,
+};
+
+// ════════════════════════════════════════════════════════════════════════════
 export default function TaxInvoice() {
-  const [preview, setPreview] = useState(false);
+  const [step, setStep] = useState(1); // 1 = form, 2 = preview
 
   const [form, setForm] = useState({
-    companyName: "BIP FENCING CONTRACT WORK",
-    address:
-      "NO. 26/A, MAIN ROAD, PAMBANKULAM, KALANTHAPANAI, PANAGUDI - 627109",
-    gst: "33ABLPI5244C1Z1",
-    state: "Tamil Nadu (Code: 33)",
-
+    copyType: "ORIGINAL FOR RECIPIENT",
     invoiceNo: "",
-    date: "",
-    dispatch: "",
-    lrNo: "",
-    vehicle: "",
-
-    consignee: "",
-    buyer: "",
-
-    items: [
-      {
-        description: "",
-        hsn: "",
-        qty: "",
-        rateIncl: "",
-        rateExcl: "",
-        per: "NOS",
-      },
-    ],
-
-    cgst: 9,
-    sgst: 9,
-    roundOff: 0,
-
+    invoiceDate: new Date().toISOString().split("T")[0],
+    referenceNo: "",
+    buyersOrderNo: "",
+    dated: "",
+    dispatchDocNo: "",
+    deliveryNoteDate: "",
+    dispatchedThrough: "",
+    destination: "",
+    billOfLading: "",
+    motorVehicleNo: "",
+    paymentMode: "Credit",
+    // Consignee
+    consigneeName: "",
+    consigneeAddress: "",
+    consigneeState: "Tamil Nadu",
+    consigneeStateCode: "33",
+    // Buyer
+    buyerName: "",
+    buyerAddress: "",
+    buyerPhone: "",
+    buyerGst: "",
+    buyerState: "Tamil Nadu",
+    buyerStateCode: "33",
+    // Balance
     openBalance: "",
     closingBalance: "",
-
-    bankName: "",
-    accountName: "",
-    accountNo: "",
-    ifsc: "",
-
-    declaration:
-      "We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.",
+    // GST
+    gstRate: 18,
+    // Bank
+    bankHolderName: DEFAULT_BANK.holderName,
+    bankName: DEFAULT_BANK.bankName,
+    bankAccountNo: DEFAULT_BANK.accountNo,
+    bankIfsc: DEFAULT_BANK.ifsc,
+    bankBranch: DEFAULT_BANK.branch,
   });
 
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const [products, setProducts] = useState([emptyProduct()]);
+  const [errors, setErrors] = useState({});
 
-  const handleItemChange = (i, field, value) => {
-    const items = [...form.items];
-    items[i][field] = value;
-    setForm({ ...form, items });
+  // ── form handlers ──────────────────────────────────────────────────────────
+  const handleForm = (e) => {
+    const { name, value } = e.target;
+    setForm((p) => ({ ...p, [name]: value }));
+    if (errors[name]) setErrors((p) => ({ ...p, [name]: "" }));
   };
 
-  const addItem = () =>
-    setForm({
-      ...form,
-      items: [
-        ...form.items,
-        { description: "", hsn: "", qty: "", rateIncl: "", rateExcl: "", per: "NOS" },
-      ],
+  const handleProduct = (idx, field, value) => {
+    setProducts((prev) => {
+      const updated = [...prev];
+      updated[idx] = { ...updated[idx], [field]: value };
+      return updated;
     });
-
-  const removeItem = (i) =>
-    setForm({
-      ...form,
-      items: form.items.filter((_, idx) => idx !== i),
-    });
-
-  const subtotal = form.items.reduce(
-    (sum, item) => sum + item.qty * item.rateExcl,
-    0
-  );
-
-  const cgstAmt = (subtotal * form.cgst) / 100;
-  const sgstAmt = (subtotal * form.sgst) / 100;
-  const taxTotal = cgstAmt + sgstAmt;
-  const total = subtotal + taxTotal + Number(form.roundOff);
-
-  // Amount in words (simple version)
-  const toWords = (num) => {
-    return "INR " + num.toFixed(0) + " Only";
   };
 
-  return (
-    <>
-      {/* ================= FORM ================= */}
-      {!preview && (
-        <form className="container mt-3" onSubmit={(e) => { e.preventDefault(); setPreview(true); }}>
-          <h4>Invoice Entry</h4>
+  const addProduct = () => setProducts((p) => [...p, emptyProduct()]);
+  const removeProduct = (idx) => {
+    if (products.length === 1) return;
+    setProducts((p) => p.filter((_, i) => i !== idx));
+  };
 
-          <input className="form-control mb-2" name="invoiceNo" placeholder="Invoice No" onChange={handleChange} />
-          <input type="date" className="form-control mb-2" name="date" onChange={handleChange} />
-          <input className="form-control mb-2" name="vehicle" placeholder="Vehicle" onChange={handleChange} />
-          <textarea className="form-control mb-2" name="buyer" placeholder="Buyer" onChange={handleChange} />
-          <textarea className="form-control mb-2" name="consignee" placeholder="Consignee" onChange={handleChange} />
+  // ── validation ─────────────────────────────────────────────────────────────
+  const validate = () => {
+    const e = {};
+    if (!form.invoiceNo.trim()) e.invoiceNo = "Required";
+    if (!form.invoiceDate) e.invoiceDate = "Required";
+    if (!form.buyerName.trim()) e.buyerName = "Required";
+    products.forEach((p, i) => {
+      if (!p.desc.trim()) e[`desc_${i}`] = "Required";
+      if (!p.qty || isNaN(p.qty) || Number(p.qty) <= 0) e[`qty_${i}`] = "Invalid";
+      if (!p.rateIncl || isNaN(p.rateIncl) || Number(p.rateIncl) <= 0) e[`rateIncl_${i}`] = "Invalid";
+    });
+    return e;
+  };
 
-          <h5>Items</h5>
+  const handlePreview = () => {
+    const e = validate();
+    if (Object.keys(e).length) { setErrors(e); return; }
+    setStep(2);
+    window.scrollTo(0, 0);
+  };
 
-          {form.items.map((item, i) => (
-            <div className="row mb-2" key={i}>
-              <div className="col"><input placeholder="Desc" className="form-control" onChange={(e)=>handleItemChange(i,"description",e.target.value)} /></div>
-              <div className="col"><input placeholder="HSN" className="form-control" onChange={(e)=>handleItemChange(i,"hsn",e.target.value)} /></div>
-              <div className="col"><input placeholder="Qty" className="form-control" onChange={(e)=>handleItemChange(i,"qty",Number(e.target.value))} /></div>
-              <div className="col"><input placeholder="Rate Excl" className="form-control" onChange={(e)=>handleItemChange(i,"rateExcl",Number(e.target.value))} /></div>
-              <div className="col"><button type="button" className="btn btn-danger" onClick={()=>removeItem(i)}>X</button></div>
+  // ── CALCULATIONS ────────────────────────────────────────────────────────────
+  // Rate (Incl. Tax) → back-calculate taxable value
+  // rateExcl = rateIncl / (1 + gstRate/100)
+  const gstRate = parseFloat(form.gstRate) || 18;
+  const cgstRate = gstRate / 2;
+  const sgstRate = gstRate / 2;
+
+  const rows = products.map((p) => {
+    const qty = parseFloat(p.qty) || 0;
+    const rateIncl = parseFloat(p.rateIncl) || 0;
+    const rateExcl = rateIncl / (1 + gstRate / 100);
+    const taxableAmt = rateExcl * qty;
+    return { ...p, qty, rateIncl, rateExcl, taxableAmt };
+  });
+
+  const totalQty = rows.reduce((s, r) => s + r.qty, 0);
+  const subtotal = rows.reduce((s, r) => s + r.taxableAmt, 0);
+  const cgstAmt = subtotal * (cgstRate / 100);
+  const sgstAmt = subtotal * (sgstRate / 100);
+  const totalTax = cgstAmt + sgstAmt;
+  const gross = subtotal + totalTax;
+  const roundOff = Math.round(gross) - gross;
+  const netAmount = gross + roundOff;
+
+  // Group by HSN for tax table
+  const hsnGroups = {};
+  rows.forEach((r) => {
+    const key = r.hsn || "–";
+    if (!hsnGroups[key]) hsnGroups[key] = { taxableValue: 0, cgst: 0, sgst: 0 };
+    const cg = r.taxableAmt * (cgstRate / 100);
+    const sg = r.taxableAmt * (sgstRate / 100);
+    hsnGroups[key].taxableValue += r.taxableAmt;
+    hsnGroups[key].cgst += cg;
+    hsnGroups[key].sgst += sg;
+  });
+
+  const errStyle = (name) => ({ borderColor: errors[name] ? "#dc3545" : undefined });
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // STEP 1 — FORM
+  // ════════════════════════════════════════════════════════════════════════════
+  if (step === 1) {
+    return (
+      <>
+        <style>{printStyles}</style>
+        <div className="container-fluid py-4 no-print" style={{ maxWidth: 1100 }}>
+          <div className="card shadow-sm border-0">
+            <div className="card-header text-white" style={{ background: "#1a1a2e" }}>
+              <h5 className="mb-0">🧾 BIP Fencing – Tax Invoice Generator</h5>
             </div>
-          ))}
+            <div className="card-body">
 
-          <button type="button" className="btn btn-secondary" onClick={addItem}>Add Item</button>
+              {/* Copy type + GST + Payment */}
+              <div className="row g-3 mb-3">
+                <div className="col-md-4">
+                  <label className="form-label fw-semibold" style={{ fontSize: 12 }}>Copy Type</label>
+                  <select className="form-select form-select-sm" name="copyType" value={form.copyType} onChange={handleForm}>
+                    {COPY_TYPES.map((t) => <option key={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div className="col-md-4">
+                  <label className="form-label fw-semibold" style={{ fontSize: 12 }}>GST Rate (%)</label>
+                  <select className="form-select form-select-sm" name="gstRate" value={form.gstRate} onChange={handleForm}>
+                    <option value={18}>18% (CGST 9% + SGST 9%)</option>
+                    <option value={12}>12% (CGST 6% + SGST 6%)</option>
+                    <option value={5}>5% (CGST 2.5% + SGST 2.5%)</option>
+                    <option value={28}>28% (CGST 14% + SGST 14%)</option>
+                  </select>
+                </div>
+                <div className="col-md-4">
+                  <label className="form-label fw-semibold" style={{ fontSize: 12 }}>Payment Mode</label>
+                  <select className="form-select form-select-sm" name="paymentMode" value={form.paymentMode} onChange={handleForm}>
+                    {["Cash", "Credit", "UPI", "Bank Transfer", "Cheque"].map((m) => <option key={m}>{m}</option>)}
+                  </select>
+                </div>
+              </div>
 
-          <br /><br />
-          <button className="btn btn-primary">Preview</button>
-        </form>
-      )}
+              {/* Invoice Details */}
+              <h6 className="fw-bold border-bottom pb-1 mb-3 text-secondary text-uppercase" style={{ fontSize: 11 }}>Invoice Details</h6>
+              <div className="row g-3 mb-4">
+                {[
+                  ["invoiceNo", "Invoice No *", "BFCWS-"],
+                  ["invoiceDate", "Invoice Date *", "", "date"],
+                  ["referenceNo", "Reference No & Date", ""],
+                  ["buyersOrderNo", "Buyer's Order No", ""],
+                  ["dated", "Dated", "", "date"],
+                  ["dispatchDocNo", "Dispatch Doc No", ""],
+                  ["deliveryNoteDate", "Delivery Note Date", "", "date"],
+                  ["dispatchedThrough", "Dispatched Through", "e.g. Velamadam"],
+                  ["destination", "Destination", ""],
+                  ["billOfLading", "Bill of Lading / LR-RR No.", "dt."],
+                  ["motorVehicleNo", "Motor Vehicle No.", "TN XX XX XXXX"],
+                ].map(([name, label, placeholder, type]) => (
+                  <div className="col-md-4" key={name}>
+                    <label className="form-label fw-semibold" style={{ fontSize: 12 }}>{label}</label>
+                    <input type={type || "text"} className="form-control form-control-sm"
+                      name={name} value={form[name]} onChange={handleForm}
+                      placeholder={placeholder || ""} style={errStyle(name)} />
+                    {errors[name] && <div className="text-danger" style={{ fontSize: 11 }}>{errors[name]}</div>}
+                  </div>
+                ))}
+              </div>
 
-      {/* ================= INVOICE ================= */}
-      {preview && (
-        <div className="invoice" id="invoice">
+              {/* Consignee */}
+              <h6 className="fw-bold border-bottom pb-1 mb-3 text-secondary text-uppercase" style={{ fontSize: 11 }}>Consignee (Ship To)</h6>
+              <div className="row g-3 mb-4">
+                <div className="col-md-5">
+                  <label className="form-label fw-semibold" style={{ fontSize: 12 }}>Name</label>
+                  <input className="form-control form-control-sm" name="consigneeName" value={form.consigneeName} onChange={handleForm} placeholder="Leave blank to copy from Buyer" />
+                </div>
+                <div className="col-md-5">
+                  <label className="form-label fw-semibold" style={{ fontSize: 12 }}>Address</label>
+                  <input className="form-control form-control-sm" name="consigneeAddress" value={form.consigneeAddress} onChange={handleForm} />
+                </div>
+                <div className="col-md-3">
+                  <label className="form-label fw-semibold" style={{ fontSize: 12 }}>State</label>
+                  <input className="form-control form-control-sm" name="consigneeState" value={form.consigneeState} onChange={handleForm} />
+                </div>
+                <div className="col-md-2">
+                  <label className="form-label fw-semibold" style={{ fontSize: 12 }}>State Code</label>
+                  <input className="form-control form-control-sm" name="consigneeStateCode" value={form.consigneeStateCode} onChange={handleForm} />
+                </div>
+              </div>
 
-          <div className="header text-center">
-            <h3>{form.companyName}</h3>
-            <p>{form.address}</p>
-            <p>GSTIN: {form.gst} | {form.state}</p>
-            <h5>TAX INVOICE</h5>
-          </div>
+              {/* Buyer */}
+              <h6 className="fw-bold border-bottom pb-1 mb-3 text-secondary text-uppercase" style={{ fontSize: 11 }}>Buyer (Bill To) *</h6>
+              <div className="row g-3 mb-4">
+                <div className="col-md-5">
+                  <label className="form-label fw-semibold" style={{ fontSize: 12 }}>Name *</label>
+                  <input className="form-control form-control-sm" name="buyerName" value={form.buyerName} onChange={handleForm} style={errStyle("buyerName")} />
+                  {errors.buyerName && <div className="text-danger" style={{ fontSize: 11 }}>{errors.buyerName}</div>}
+                </div>
+                <div className="col-md-5">
+                  <label className="form-label fw-semibold" style={{ fontSize: 12 }}>Address</label>
+                  <input className="form-control form-control-sm" name="buyerAddress" value={form.buyerAddress} onChange={handleForm} />
+                </div>
+                <div className="col-md-3">
+                  <label className="form-label fw-semibold" style={{ fontSize: 12 }}>Phone</label>
+                  <input className="form-control form-control-sm" name="buyerPhone" value={form.buyerPhone} onChange={handleForm} />
+                </div>
+                <div className="col-md-3">
+                  <label className="form-label fw-semibold" style={{ fontSize: 12 }}>GST No</label>
+                  <input className="form-control form-control-sm" name="buyerGst" value={form.buyerGst} onChange={handleForm} />
+                </div>
+                <div className="col-md-3">
+                  <label className="form-label fw-semibold" style={{ fontSize: 12 }}>State</label>
+                  <input className="form-control form-control-sm" name="buyerState" value={form.buyerState} onChange={handleForm} />
+                </div>
+                <div className="col-md-2">
+                  <label className="form-label fw-semibold" style={{ fontSize: 12 }}>State Code</label>
+                  <input className="form-control form-control-sm" name="buyerStateCode" value={form.buyerStateCode} onChange={handleForm} />
+                </div>
+              </div>
 
-          <div className="section">
-            <div>
-              <b>Buyer:</b><br />{form.buyer}
-              <br /><br />
-              <b>Consignee:</b><br />{form.consignee}
+              {/* Products */}
+              <h6 className="fw-bold border-bottom pb-1 mb-3 text-secondary text-uppercase" style={{ fontSize: 11 }}>
+                Products — Enter Rate Inclusive of Tax
+              </h6>
+              <div className="table-responsive mb-2">
+                <table className="table table-bordered table-sm align-middle mb-0" style={{ fontSize: 12 }}>
+                  <thead className="table-dark">
+                    <tr>
+                      <th style={{ width: 32 }}>#</th>
+                      <th>Description</th>
+                      <th style={{ width: 85 }}>HSN/SAC</th>
+                      <th style={{ width: 75 }}>Qty</th>
+                      <th style={{ width: 55 }}>Per</th>
+                      <th style={{ width: 115 }}>Rate (Incl. Tax)</th>
+                      <th style={{ width: 100 }}>Rate (Excl. Tax)</th>
+                      <th style={{ width: 105 }}>Taxable Value</th>
+                      <th style={{ width: 38 }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {products.map((p, i) => {
+                      const q = parseFloat(p.qty) || 0;
+                      const ri = parseFloat(p.rateIncl) || 0;
+                      const re = ri / (1 + gstRate / 100);
+                      const ta = re * q;
+                      return (
+                        <tr key={i}>
+                          <td className="text-center">{i + 1}</td>
+                          <td>
+                            <input className="form-control form-control-sm" value={p.desc}
+                              onChange={(e) => handleProduct(i, "desc", e.target.value)}
+                              style={{ borderColor: errors[`desc_${i}`] ? "#dc3545" : undefined }} />
+                          </td>
+                          <td>
+                            <input className="form-control form-control-sm" value={p.hsn}
+                              onChange={(e) => handleProduct(i, "hsn", e.target.value)} />
+                          </td>
+                          <td>
+                            <input type="number" min="0" className="form-control form-control-sm" value={p.qty}
+                              onChange={(e) => handleProduct(i, "qty", e.target.value)}
+                              style={{ borderColor: errors[`qty_${i}`] ? "#dc3545" : undefined }} />
+                          </td>
+                          <td>
+                            <select className="form-select form-select-sm" value={p.per}
+                              onChange={(e) => handleProduct(i, "per", e.target.value)}>
+                              {["NOS", "KGS", "MTR", "SQM", "RFT", "SET", "PCS", "LTR"].map((u) => <option key={u}>{u}</option>)}
+                            </select>
+                          </td>
+                          <td>
+                            <input type="number" min="0" step="0.01" className="form-control form-control-sm" value={p.rateIncl}
+                              onChange={(e) => handleProduct(i, "rateIncl", e.target.value)}
+                              style={{ borderColor: errors[`rateIncl_${i}`] ? "#dc3545" : undefined }} />
+                          </td>
+                          <td className="text-end text-muted">{fmt2(re)}</td>
+                          <td className="text-end fw-semibold">{fmt2(ta)}</td>
+                          <td className="text-center">
+                            <button type="button" className="btn btn-sm btn-outline-danger"
+                              onClick={() => removeProduct(i)} disabled={products.length === 1}>✕</button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div className="d-flex justify-content-between align-items-start mb-4">
+                <button type="button" className="btn btn-outline-secondary btn-sm" onClick={addProduct}>+ Add Row</button>
+                <div className="text-end" style={{ fontSize: 13 }}>
+                  <div>Subtotal (Taxable): <strong>₹ {fmt2(subtotal)}</strong></div>
+                  <div className="text-muted">CGST {cgstRate}%: ₹ {fmt2(cgstAmt)} | SGST {sgstRate}%: ₹ {fmt2(sgstAmt)}</div>
+                  <div className="text-muted">Round Off: ₹ {fmt2(roundOff)}</div>
+                  <div className="fs-6 fw-bold">Net Amount: ₹ {fmt2(netAmount)}</div>
+                </div>
+              </div>
+
+              {/* Balance */}
+              <h6 className="fw-bold border-bottom pb-1 mb-3 text-secondary text-uppercase" style={{ fontSize: 11 }}>Balance Tracking</h6>
+              <div className="row g-3 mb-4">
+                <div className="col-md-3">
+                  <label className="form-label fw-semibold" style={{ fontSize: 12 }}>Open Balance (₹)</label>
+                  <input type="number" className="form-control form-control-sm" name="openBalance" value={form.openBalance} onChange={handleForm} placeholder="0.00" />
+                </div>
+                <div className="col-md-3">
+                  <label className="form-label fw-semibold" style={{ fontSize: 12 }}>Closing Balance (₹)</label>
+                  <input type="number" className="form-control form-control-sm" name="closingBalance" value={form.closingBalance} onChange={handleForm} placeholder="0.00" />
+                </div>
+              </div>
+
+              {/* Bank */}
+              <h6 className="fw-bold border-bottom pb-1 mb-3 text-secondary text-uppercase" style={{ fontSize: 11 }}>Company Bank Details</h6>
+              <div className="row g-3 mb-4">
+                {[
+                  ["bankHolderName", "A/c Holder Name"],
+                  ["bankName", "Bank Name"],
+                  ["bankAccountNo", "A/c No."],
+                  ["bankIfsc", "IFS Code"],
+                  ["bankBranch", "Branch"],
+                ].map(([name, label]) => (
+                  <div className="col-md-4" key={name}>
+                    <label className="form-label fw-semibold" style={{ fontSize: 12 }}>{label}</label>
+                    <input className="form-control form-control-sm" name={name} value={form[name]} onChange={handleForm} />
+                  </div>
+                ))}
+              </div>
+
+              <div className="d-grid d-md-flex justify-content-md-end">
+                <button className="btn btn-lg px-5 text-white" style={{ background: "#1a1a2e" }} onClick={handlePreview}>
+                  Preview Invoice →
+                </button>
+              </div>
             </div>
-
-            <div>
-              <p>Invoice: {form.invoiceNo}</p>
-              <p>Date: {form.date}</p>
-              <p>Vehicle: {form.vehicle}</p>
-            </div>
-          </div>
-
-          {/* ITEMS TABLE */}
-          <table className="invoice-table">
-            <thead>
-              <tr>
-                <th>Sl</th>
-                <th>Description</th>
-                <th>HSN</th>
-                <th>Qty</th>
-                <th>Rate</th>
-                <th>Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {form.items.map((item, i) => (
-                <tr key={i}>
-                  <td>{i + 1}</td>
-                  <td>{item.description}</td>
-                  <td>{item.hsn}</td>
-                  <td>{item.qty}</td>
-                  <td>{item.rateExcl}</td>
-                  <td>{item.qty * item.rateExcl}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {/* TAX SECTION */}
-          <div className="tax-box">
-            <p>Taxable Value: ₹ {subtotal.toFixed(2)}</p>
-            <p>CGST ({form.cgst}%): ₹ {cgstAmt.toFixed(2)}</p>
-            <p>SGST ({form.sgst}%): ₹ {sgstAmt.toFixed(2)}</p>
-            <p>Rounding Off: ₹ {form.roundOff}</p>
-            <h5>Grand Total: ₹ {total.toFixed(2)}</h5>
-          </div>
-
-          {/* TAX TABLE */}
-          <table className="invoice-table mt-3">
-            <thead>
-              <tr>
-                <th>HSN/SAC</th>
-                <th>Taxable Value</th>
-                <th>CGST</th>
-                <th>SGST</th>
-                <th>Total Tax</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>{form.items[0]?.hsn}</td>
-                <td>{subtotal.toFixed(2)}</td>
-                <td>{cgstAmt.toFixed(2)}</td>
-                <td>{sgstAmt.toFixed(2)}</td>
-                <td>{taxTotal.toFixed(2)}</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <p><b>Amount in Words:</b> {toWords(total)}</p>
-          <p><b>Tax Amount in Words:</b> {toWords(taxTotal)}</p>
-
-          <p>Open Balance: {form.openBalance}</p>
-          <p>Closing Balance: {form.closingBalance}</p>
-
-          <div className="footer">
-            <p>{form.declaration}</p>
-
-            <div className="sign">
-              <span>Receiver Signature</span>
-              <span>Authorised Signatory</span>
-            </div>
-          </div>
-
-          <div className="no-print mt-3">
-            <button className="btn btn-secondary" onClick={() => setPreview(false)}>Edit</button>
-            <button className="btn btn-success ms-2" onClick={() => window.print()}>
-              Print
-            </button>
           </div>
         </div>
-      )}
+      </>
+    );
+  }
 
-      {/* ================= CSS ================= */}
-      <style>{`
-        .invoice {
-          width: 800px;
-          margin: auto;
-          padding: 20px;
-          border: 1px solid #000;
-          font-size: 13px;
-        }
+  // ════════════════════════════════════════════════════════════════════════════
+  // STEP 2 — INVOICE PREVIEW + PRINT
+  // ════════════════════════════════════════════════════════════════════════════
+  return (
+    <>
+      <style>{printStyles}</style>
 
-        .header { text-align: center; }
+      {/* Action Bar */}
+      <div className="no-print py-3 d-flex justify-content-center gap-3">
+        <button className="btn btn-outline-secondary px-4" onClick={() => setStep(1)}>✏️ Edit</button>
+        <button className="btn text-white px-4" style={{ background: "#1a1a2e" }} onClick={() => window.print()}>
+          🖨️ Confirm &amp; Print
+        </button>
+      </div>
 
-        .section {
-          display: flex;
-          justify-content: space-between;
-          margin-top: 10px;
-        }
+      {/* ═══════════════════════════════════
+          PRINTABLE INVOICE
+      ═══════════════════════════════════ */}
+      <div
+        id="bip-invoice-print"
+        style={{
+          maxWidth: 900,
+          margin: "0 auto 30px",
+          fontFamily: "'Times New Roman', Times, serif",
+          color: "#000",
+          background: "#fff",
+          border: "2px solid #000",
+        }}
+      >
+        {/* Copy label */}
+        <div style={{ textAlign: "right", padding: "3px 10px 2px", fontStyle: "italic", fontSize: 11, borderBottom: "1px solid #bbb" }}>
+          ({form.copyType})
+        </div>
 
-        .invoice-table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-top: 10px;
-        }
+        {/* ── HEADER ── */}
+        <table style={{ width: "100%", borderCollapse: "collapse", borderBottom: "2px solid #000" }}>
+          <tbody>
+            <tr>
+              {/* Logo box */}
+              <td style={{ width: 80, borderRight: "1px solid #000", padding: 6, textAlign: "center", verticalAlign: "middle" }}>
+                <div style={{
+                  width: 66, height: 66, border: "2px solid #000",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontWeight: "bold", fontSize: 10, textAlign: "center", lineHeight: 1.2,
+                  letterSpacing: 0.5,
+                }}>
+                  BIP<br />FENCING
+                </div>
+              </td>
+              {/* Company info */}
+              <td style={{ padding: "6px 14px", textAlign: "center", verticalAlign: "middle" }}>
+                <div style={{ fontSize: 20, fontWeight: "bold", letterSpacing: 2, textTransform: "uppercase" }}>
+                  {COMPANY.name}
+                </div>
+                <div style={{ fontSize: 12, marginTop: 2 }}>{COMPANY.address}</div>
+                <div style={{ fontSize: 12 }}>
+                  GSTIN/UIN: <strong>{COMPANY.gst}</strong>&nbsp;&nbsp;
+                  State: {COMPANY.state}, Code: {COMPANY.stateCode}
+                </div>
+                <div style={{ fontSize: 12 }}>Ph: {COMPANY.phone}</div>
+              </td>
+              {/* TAX INVOICE badge */}
+              <td style={{ width: 110, borderLeft: "1px solid #000", padding: 6, textAlign: "center", verticalAlign: "middle" }}>
+                <div style={{
+                  border: "2px solid #000", padding: "6px 4px",
+                  fontWeight: "bold", fontSize: 13, textTransform: "uppercase", lineHeight: 1.3,
+                }}>
+                  TAX<br />INVOICE
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
-        .invoice-table th, .invoice-table td {
-          border: 1px solid #000;
-          padding: 5px;
-          text-align: center;
-        }
+        {/* ── CONSIGNEE + INVOICE META ── */}
+        <table style={{ width: "100%", borderCollapse: "collapse", borderBottom: "1px solid #000" }}>
+          <tbody>
+            <tr>
+              {/* Consignee */}
+              <td style={{ width: "52%", borderRight: "1px solid #000", padding: "5px 8px", verticalAlign: "top" }}>
+                <div style={sectionHead}>Consignee (Ship to)</div>
+                <div style={{ fontWeight: "bold", fontSize: 13 }}>
+                  {form.consigneeName || form.buyerName}
+                </div>
+                <div style={{ fontSize: 12 }}>{form.consigneeAddress || form.buyerAddress}</div>
+                <div style={{ fontSize: 12 }}>
+                  State Name: {form.consigneeState || form.buyerState},
+                  Code: {form.consigneeStateCode || form.buyerStateCode}
+                </div>
+              </td>
+              {/* Invoice meta */}
+              <td style={{ padding: "5px 8px", verticalAlign: "top" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                  <tbody>
+                    {[
+                      ["Invoice No.", form.invoiceNo],
+                      ["Delivery Note", ""],
+                      ["Reference No. & Date", form.referenceNo],
+                      ["Other References", ""],
+                      ["Buyer's Order No.", form.buyersOrderNo],
+                      ["Dated", form.dated ? formatDate(form.dated) : ""],
+                      ["Dispatch Doc No.", form.dispatchDocNo],
+                      ["Delivery Note Date", form.deliveryNoteDate ? formatDate(form.deliveryNoteDate) : ""],
+                      ["Dispatched through", form.dispatchedThrough],
+                      ["Destination", form.destination],
+                      ["Bill of Lading/LR-RR No.", form.billOfLading],
+                      ["Motor Vehicle No.", form.motorVehicleNo],
+                    ].map(([k, v]) => (
+                      <tr key={k}>
+                        <td style={{ fontWeight: "bold", paddingRight: 4, paddingBottom: 1, whiteSpace: "nowrap", fontSize: 11 }}>{k}</td>
+                        <td style={{ paddingBottom: 1, fontSize: 12 }}>: {v}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
-        .tax-box {
-          text-align: right;
-          margin-top: 10px;
-        }
+        {/* ── BUYER + PAYMENT ── */}
+        <table style={{ width: "100%", borderCollapse: "collapse", borderBottom: "1px solid #000" }}>
+          <tbody>
+            <tr>
+              {/* Buyer */}
+              <td style={{ width: "52%", borderRight: "1px solid #000", padding: "5px 8px", verticalAlign: "top" }}>
+                <div style={sectionHead}>Buyer (Bill to)</div>
+                <div style={{ fontWeight: "bold", fontSize: 13 }}>{form.buyerName}</div>
+                <div style={{ fontSize: 12 }}>{form.buyerAddress}</div>
+                {form.buyerPhone && <div style={{ fontSize: 12 }}>Ph: {form.buyerPhone}</div>}
+                {form.buyerGst && <div style={{ fontSize: 12 }}>GSTIN/UIN: {form.buyerGst}</div>}
+                <div style={{ fontSize: 12 }}>
+                  State Name: {form.buyerState}, Code: {form.buyerStateCode}
+                </div>
+              </td>
+              {/* Date & Payment */}
+              <td style={{ padding: "5px 8px", verticalAlign: "top" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                  <tbody>
+                    {[
+                      ["Invoice No.", form.invoiceNo],
+                      ["Invoice Date", formatDate(form.invoiceDate)],
+                      ["Payment", form.paymentMode],
+                      form.dispatchedThrough ? ["Transport", form.dispatchedThrough] : null,
+                      form.motorVehicleNo ? ["Motor Vehicle No.", form.motorVehicleNo] : null,
+                      form.destination ? ["Delivery To", form.destination] : null,
+                    ].filter(Boolean).map(([k, v]) => (
+                      <tr key={k}>
+                        <td style={{ fontWeight: "bold", paddingRight: 4, paddingBottom: 2, width: "45%", fontSize: 11 }}>{k}</td>
+                        <td style={{ paddingBottom: 2 }}>: {v}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
-        .footer {
-          margin-top: 20px;
-        }
+        {/* ── PRODUCT TABLE ── */}
+        <table style={{ width: "100%", borderCollapse: "collapse", borderBottom: "1px solid #000" }}>
+          <thead>
+            <tr style={{ background: "#e8e8e8" }}>
+              {[
+                { label: "Sl\nNo.", w: 30, align: "center" },
+                { label: "Description of Goods", align: "left" },
+                { label: "HSN/\nSAC", w: 65, align: "center" },
+                { label: "Quantity", w: 68, align: "center" },
+                { label: "Rate\n(Incl. of Tax)", w: 80, align: "right" },
+                { label: "Rate\n(Excl. Tax)", w: 78, align: "right" },
+                { label: "per", w: 38, align: "center" },
+                { label: "Amount\n(Taxable Value)", w: 100, align: "right" },
+              ].map((c) => (
+                <th key={c.label} style={{ ...cell({ background: "#e8e8e8", whiteSpace: "pre-line", textAlign: c.align, fontSize: 11 }), width: c.w }}>
+                  {c.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={i}>
+                <td style={cell({ textAlign: "center" })}>{i + 1}</td>
+                <td style={cell()}><strong>{r.desc}</strong></td>
+                <td style={cell({ textAlign: "center" })}>{r.hsn || "–"}</td>
+                <td style={cell({ textAlign: "center" })}>{r.qty} {r.per}</td>
+                <td style={cell({ textAlign: "right" })}>{fmt2(r.rateIncl)}</td>
+                <td style={cell({ textAlign: "right" })}>{fmt2(r.rateExcl)}</td>
+                <td style={cell({ textAlign: "center" })}>{r.per}</td>
+                <td style={cell({ textAlign: "right" })}>{fmt2(r.taxableAmt)}</td>
+              </tr>
+            ))}
+            {/* blank filler rows */}
+            {rows.length < 5 &&
+              Array.from({ length: 5 - rows.length }).map((_, i) => (
+                <tr key={`blank_${i}`} style={{ height: 22 }}>
+                  {Array(8).fill(null).map((__, j) => <td key={j} style={cell()}>&nbsp;</td>)}
+                </tr>
+              ))}
+            {/* CGST / SGST label rows */}
+            <tr>
+              <td colSpan={7} style={cell({ textAlign: "right", fontStyle: "italic", fontWeight: "bold" })}>
+                CGST TAX
+              </td>
+              <td style={cell({ textAlign: "right", fontWeight: "bold" })}>{fmt2(cgstAmt)}</td>
+            </tr>
+            <tr>
+              <td colSpan={7} style={cell({ textAlign: "right", fontStyle: "italic", fontWeight: "bold" })}>
+                SGST TAX
+              </td>
+              <td style={cell({ textAlign: "right", fontWeight: "bold" })}>{fmt2(sgstAmt)}</td>
+            </tr>
+            <tr>
+              <td colSpan={7} style={cell({ textAlign: "right", fontStyle: "italic", fontWeight: "bold" })}>
+                ROUNDING OFF
+              </td>
+              <td style={cell({ textAlign: "right", fontWeight: "bold" })}>
+                {roundOff >= 0 ? `(+) ${fmt2(Math.abs(roundOff))}` : `(-) ${fmt2(Math.abs(roundOff))}`}
+              </td>
+            </tr>
+            {/* Totals */}
+            <tr style={{ background: "#f0f0f0" }}>
+              <td colSpan={3} style={cell({ textAlign: "right", fontWeight: "bold" })}>Total</td>
+              <td style={cell({ textAlign: "center", fontWeight: "bold" })}>{fmt2(totalQty)}</td>
+              <td style={cell()}></td>
+              <td style={cell()}></td>
+              <td style={cell()}></td>
+              <td style={cell({ textAlign: "right", fontWeight: "bold" })}>₹ {fmt2(subtotal)}</td>
+            </tr>
+          </tbody>
+        </table>
 
-        .sign {
-          display: flex;
-          justify-content: space-between;
-          margin-top: 40px;
-        }
+        {/* ── AMOUNT IN WORDS + NET AMOUNT ── */}
+        <table style={{ width: "100%", borderCollapse: "collapse", borderBottom: "1px solid #000" }}>
+          <tbody>
+            <tr>
+              <td style={{ width: "55%", borderRight: "1px solid #000", padding: "5px 8px", verticalAlign: "top", fontSize: 12 }}>
+                <div style={{ fontWeight: "bold", marginBottom: 2 }}>Amount Chargeable (in words)</div>
+                <div style={{ fontStyle: "italic", fontSize: 13 }}>{amountInWords(netAmount)}</div>
+              </td>
+              <td style={{ padding: "5px 8px", verticalAlign: "middle", textAlign: "right" }}>
+                <div style={{ fontSize: 18, fontWeight: "bold" }}>₹ {fmt2(netAmount)}</div>
+                <div style={{ fontSize: 11 }}>E. &amp; O.E</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
-        @media print {
-          body * { visibility: hidden; }
-          #invoice, #invoice * { visibility: visible; }
-          #invoice { position: absolute; top: 0; left: 0; width: 100%; }
-          .no-print { display: none; }
-        }
-      `}</style>
+        {/* ── HSN/SAC TAX TABLE ── */}
+        <table style={{ width: "100%", borderCollapse: "collapse", borderBottom: "1px solid #000" }}>
+          <thead>
+            <tr style={{ background: "#e8e8e8" }}>
+              {["HSN/SAC", "Taxable\nValue", `CGST\nRate`, "CGST\nAmount", `SGST/UTGST\nRate`, "SGST/UTGST\nAmount", "Total Tax\nAmount"].map((h) => (
+                <th key={h} style={cell({ textAlign: "center", fontSize: 11, whiteSpace: "pre-line", background: "#e8e8e8" })}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {Object.entries(hsnGroups).map(([hsn, d]) => (
+              <tr key={hsn}>
+                <td style={cell({ textAlign: "center" })}>{hsn}</td>
+                <td style={cell({ textAlign: "right" })}>{fmt2(d.taxableValue)}</td>
+                <td style={cell({ textAlign: "center" })}>{cgstRate}%</td>
+                <td style={cell({ textAlign: "right" })}>{fmt2(d.cgst)}</td>
+                <td style={cell({ textAlign: "center" })}>{sgstRate}%</td>
+                <td style={cell({ textAlign: "right" })}>{fmt2(d.sgst)}</td>
+                <td style={cell({ textAlign: "right" })}>{fmt2(d.cgst + d.sgst)}</td>
+              </tr>
+            ))}
+            {/* totals */}
+            <tr style={{ fontWeight: "bold", background: "#f5f5f5" }}>
+              <td style={cell({ fontSize: 12 })}>Total</td>
+              <td style={cell({ textAlign: "right" })}>{fmt2(subtotal)}</td>
+              <td style={cell()}></td>
+              <td style={cell({ textAlign: "right" })}>{fmt2(cgstAmt)}</td>
+              <td style={cell()}></td>
+              <td style={cell({ textAlign: "right" })}>{fmt2(sgstAmt)}</td>
+              <td style={cell({ textAlign: "right" })}>{fmt2(totalTax)}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* ── TAX AMOUNT IN WORDS ── */}
+        <div style={{ padding: "3px 8px", borderBottom: "1px solid #000", fontSize: 12 }}>
+          <strong>Tax Amount (in words):</strong>&nbsp;
+          <em>{amountInWords(totalTax)}</em>
+        </div>
+
+        {/* ── FOOTER: Bank + Declaration + Signatures ── */}
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <tbody>
+            <tr>
+              {/* Bank Details */}
+              <td style={{ width: "42%", borderRight: "1px solid #000", padding: "6px 8px", verticalAlign: "top", fontSize: 12 }}>
+                <div style={{ fontWeight: "bold", marginBottom: 4 }}>Company's Bank Details</div>
+                {[
+                  ["A/c Holder's Name", form.bankHolderName],
+                  ["Bank Name", form.bankName],
+                  ["A/c No.", form.bankAccountNo],
+                  ["Branch & IFS Code", `${form.bankBranch} & ${form.bankIfsc}`],
+                ].map(([k, v]) => (
+                  <div key={k}><strong>{k}</strong>: {v}</div>
+                ))}
+                {/* Balance */}
+                {(form.openBalance || form.closingBalance) && (
+                  <div style={{ marginTop: 6, borderTop: "1px dashed #999", paddingTop: 4 }}>
+                    {form.openBalance ? <div><strong>Open Balance:</strong> {fmt2(form.openBalance)}</div> : null}
+                    {form.closingBalance ? <div><strong>Closing Balance:</strong> {fmt2(form.closingBalance)}</div> : null}
+                  </div>
+                )}
+              </td>
+              {/* Declaration + Signatures */}
+              <td style={{ padding: "6px 8px", verticalAlign: "top" }}>
+                <div style={{ fontSize: 11, marginBottom: 8 }}>
+                  <strong>Declaration:</strong> {DECLARATION}
+                </div>
+                <div style={{ textAlign: "right", fontWeight: "bold", fontSize: 12, marginBottom: 2 }}>
+                  for {COMPANY.name}
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 40 }}>
+                  <div style={{ textAlign: "center", flex: 1 }}>
+                    <div style={{ borderTop: "1px solid #000", paddingTop: 4, fontSize: 12 }}>
+                      Receiver's Signature
+                    </div>
+                  </div>
+                  <div style={{ flex: 0.2 }}></div>
+                  <div style={{ textAlign: "center", flex: 1 }}>
+                    <div style={{ borderTop: "1px solid #000", paddingTop: 4, fontSize: 12 }}>
+                      Authorised Signatory
+                    </div>
+                  </div>
+                </div>
+                <div style={{ textAlign: "center", marginTop: 8, fontSize: 10, color: "#666" }}>
+                  This is a Computer Generated Invoice
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Bottom action */}
+      <div className="no-print d-flex justify-content-center gap-3 pb-4">
+        <button className="btn btn-outline-secondary px-4" onClick={() => setStep(1)}>✏️ Edit</button>
+        <button className="btn text-white px-4" style={{ background: "#1a1a2e" }} onClick={() => window.print()}>
+          🖨️ Confirm &amp; Print
+        </button>
+      </div>
     </>
   );
 }

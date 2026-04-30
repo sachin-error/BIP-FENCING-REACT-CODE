@@ -81,7 +81,7 @@ export default function Salary() {
                   <div className="col-12" key={name}>
                     <label className="form-label">{label}</label>
                     <div className="input-group">
-                      <span className="input-group-text" style={{ fontSize: 12, background: '#f6f8fa' }}>AED</span>
+                      <span className="input-group-text" style={{ fontSize: 12, background: '#f6f8fa' }}>INR</span>
                       <input type="number" className="form-control" name={name} value={form[name]} onChange={handleChange} placeholder="0.00" min="0" />
                     </div>
                   </div>
@@ -100,7 +100,7 @@ export default function Salary() {
                   <div className="col-12" key={name}>
                     <label className="form-label">{label}</label>
                     <div className="input-group">
-                      <span className="input-group-text" style={{ fontSize: 12, background: '#fff1f0', color: '#cf222e' }}>AED</span>
+                      <span className="input-group-text" style={{ fontSize: 12, background: '#fff1f0', color: '#cf222e' }}>INR</span>
                       <input type="number" className="form-control" name={name} value={form[name]} onChange={handleChange} placeholder="0.00" min="0" />
                     </div>
                   </div>
@@ -112,13 +112,13 @@ export default function Salary() {
                 {[['Gross Salary', grossSalary, '#24292f'], ['Total Deductions', totalDeductions, '#cf222e']].map(([l, v, c]) => (
                   <div key={l} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, marginBottom: 6 }}>
                     <span style={{ color: '#57606a' }}>{l}</span>
-                    <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 600, color: c }}>AED {v.toFixed(2)}</span>
+                    <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 600, color: c }}>INR {v.toFixed(2)}</span>
                   </div>
                 ))}
                 <div style={{ height: 1, background: '#d0d7de', margin: '8px 0' }}></div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15 }}>
                   <span style={{ fontWeight: 700 }}>Net Salary</span>
-                  <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: '#1a7f37' }}>AED {netSalary.toFixed(2)}</span>
+                  <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: '#1a7f37' }}>INR {netSalary.toFixed(2)}</span>
                 </div>
               </div>
             </div>
