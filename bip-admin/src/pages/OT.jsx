@@ -57,9 +57,9 @@ export default function OT() {
                   <input type="number" className="form-control" name="otHours" value={form.otHours} onChange={handleChange} placeholder="2.5" min="0" step="0.5" required />
                 </div>
                 <div className="col-md-4">
-                  <label className="form-label">Basic Hourly Rate (AED)</label>
+                  <label className="form-label">Basic Hourly Rate (INR)</label>
                   <div className="input-group">
-                    <span className="input-group-text" style={{ fontSize: 12, background: '#f6f8fa' }}>AED</span>
+                    <span className="input-group-text" style={{ fontSize: 12, background: '#f6f8fa' }}>INR</span>
                     <input type="number" className="form-control" name="basicHourlyRate" value={form.basicHourlyRate} onChange={handleChange} placeholder="0.00" min="0" />
                   </div>
                 </div>
@@ -75,7 +75,7 @@ export default function OT() {
                 <div className="col-md-4">
                   <label className="form-label">OT Pay</label>
                   <div className="form-control" style={{ background: otPay > 0 ? '#fff1e5' : '#f6f8fa', fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: '#bc4c00', fontSize: 15 }}>
-                    AED {otPay.toFixed(2)}
+                    INR {otPay.toFixed(2)}
                   </div>
                 </div>
                 <div className="col-md-6">
