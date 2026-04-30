@@ -87,6 +87,14 @@ const COLORS = ["primary", "success", "warning", "info", "danger", "secondary"];
 const getInitials = (name) =>
   name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 
+// Derive status from paid/pending values
+const deriveStatus = (paid, pending) => {
+  if (pending <= 0) return "paid";
+  if (paid <= 0) return "partial";
+  // Check if any amount is overdue — we keep it simple: if there's pending, mark partial
+  return "partial";
+};
+
 const getStatusBadge = (status) => {
   const badges = {
     paid: { class: 'bg-success', label: 'Fully paid' },
@@ -106,12 +114,11 @@ const getProjectStatusBadge = (status) =>
 
 const initialForm = {
   name: '', phone: '', email: '', address: '', gst: '',
-  company: '', type: '', contractValue: '', paymentTerms: '',
-  startDate: '', endDate: '', notes: '',
+  company: '', type: '', contractValue: '', paid: '', pending: '',
+  paymentStatus: '', paymentTerms: '', startDate: '', endDate: '', notes: '',
 };
 
 export default function Clients() {
-  // ── Load from localStorage on first render, fall back to defaults ──
   const [clientsData, setClientsData] = useState(() => {
     try {
       const saved = localStorage.getItem('bip_clients');
@@ -128,20 +135,48 @@ export default function Clients() {
   const [selected, setSelected] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState(null);       // null = adding new
-  const [deleteConfirm, setDeleteConfirm] = useState(null); // client object to confirm delete
+  const [editingId, setEditingId] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  // Set initial selected client once data loads
   useEffect(() => {
     if (clientsData.length > 0 && !selected) {
       setSelected(clientsData[0]);
     }
   }, []);
 
-  // ── Persist to localStorage whenever clientsData changes ──
   useEffect(() => {
     localStorage.setItem('bip_clients', JSON.stringify(clientsData));
   }, [clientsData]);
+
+  // Auto-calculate pending when contractValue or paid changes
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => {
+      const updated = { ...prev, [name]: value };
+
+      // Auto-compute pending = contractValue - paid
+      if (name === 'contractValue' || name === 'paid') {
+        const cv = parseFloat(name === 'contractValue' ? value : prev.contractValue) || 0;
+        const pd = parseFloat(name === 'paid' ? value : prev.paid) || 0;
+        const pen = Math.max(0, cv - pd);
+        updated.pending = pen.toString();
+        // Auto-set status
+        if (pen <= 0 && pd > 0) updated.paymentStatus = 'paid';
+        else if (pd <= 0) updated.paymentStatus = 'partial';
+        else updated.paymentStatus = 'partial';
+      }
+
+      // If user manually edits pending, update paymentStatus
+      if (name === 'pending') {
+        const pen = parseFloat(value) || 0;
+        const pd = parseFloat(prev.paid) || 0;
+        if (pen <= 0 && pd > 0) updated.paymentStatus = 'paid';
+        else updated.paymentStatus = 'partial';
+      }
+
+      return updated;
+    });
+  };
 
   const totalRevenue = clientsData.reduce((s, c) => s + c.contractValue, 0);
   const totalPaid = clientsData.reduce((s, c) => s + c.paid, 0);
@@ -160,15 +195,14 @@ export default function Clients() {
     );
   });
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-
-  // ── Save (Add or Update) ──
   const handleSubmit = (e) => {
     e.preventDefault();
     const cv = parseFloat(form.contractValue) || 0;
+    const paidAmt = parseFloat(form.paid) || 0;
+    const pendingAmt = parseFloat(form.pending) || Math.max(0, cv - paidAmt);
+    const status = form.paymentStatus || deriveStatus(paidAmt, pendingAmt);
 
     if (editingId !== null) {
-      // UPDATE existing client (preserve invoices, projects, paid, pending, status, color, since)
       setClientsData((prev) =>
         prev.map((c) =>
           c.id === editingId
@@ -182,6 +216,9 @@ export default function Clients() {
                 company: form.company,
                 type: form.type,
                 contractValue: cv,
+                paid: paidAmt,
+                pending: pendingAmt,
+                status: status,
                 paymentTerms: form.paymentTerms,
                 startDate: form.startDate,
                 endDate: form.endDate,
@@ -191,7 +228,6 @@ export default function Clients() {
             : c
         )
       );
-      // Keep right panel in sync
       setSelected((prev) =>
         prev?.id === editingId
           ? {
@@ -204,13 +240,15 @@ export default function Clients() {
               company: form.company,
               type: form.type,
               contractValue: cv,
+              paid: paidAmt,
+              pending: pendingAmt,
+              status: status,
               initials: getInitials(form.name),
             }
           : prev
       );
       setEditingId(null);
     } else {
-      // ADD new client
       const newClient = {
         id: Date.now(),
         initials: getInitials(form.name),
@@ -222,9 +260,9 @@ export default function Clients() {
         company: form.company,
         type: form.type,
         contractValue: cv,
-        paid: 0,
-        pending: cv,
-        status: "partial",
+        paid: paidAmt,
+        pending: pendingAmt,
+        status: status,
         color: COLORS[Math.floor(Math.random() * COLORS.length)],
         since: new Date().toLocaleString('en-US', { month: 'short', year: 'numeric' }),
         paymentTerms: form.paymentTerms,
@@ -244,7 +282,6 @@ export default function Clients() {
     setShowForm(false);
   };
 
-  // ── Open Edit form pre-filled ──
   const handleEdit = (client) => {
     setForm({
       name: client.name,
@@ -255,6 +292,9 @@ export default function Clients() {
       company: client.company || '',
       type: client.type || '',
       contractValue: client.contractValue || '',
+      paid: client.paid || '',
+      pending: client.pending || '',
+      paymentStatus: client.status || '',
       paymentTerms: client.paymentTerms || '',
       startDate: client.startDate || '',
       endDate: client.endDate || '',
@@ -265,7 +305,6 @@ export default function Clients() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // ── Delete after confirmation ──
   const handleDelete = (clientId) => {
     setClientsData((prev) => {
       const next = prev.filter((c) => c.id !== clientId);
@@ -293,35 +332,22 @@ export default function Clients() {
 
       {/* ── Delete Confirmation Modal ── */}
       {deleteConfirm && (
-        <div
-          className="modal show d-block"
-          style={{ background: 'rgba(0,0,0,0.45)', zIndex: 1055 }}
-        >
+        <div className="modal show d-block" style={{ background: 'rgba(0,0,0,0.45)', zIndex: 1055 }}>
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content shadow-lg">
               <div className="modal-header border-0 pb-0">
                 <h6 className="modal-title text-danger">
-                  <i className="bi bi-exclamation-triangle-fill me-2"></i>
-                  Delete Client
+                  <i className="bi bi-exclamation-triangle-fill me-2"></i>Delete Client
                 </h6>
               </div>
               <div className="modal-body">
                 <p className="mb-0">
-                  Are you sure you want to delete{' '}
-                  <strong>{deleteConfirm.name}</strong>? This action cannot be undone.
+                  Are you sure you want to delete <strong>{deleteConfirm.name}</strong>? This action cannot be undone.
                 </p>
               </div>
               <div className="modal-footer border-0 pt-0">
-                <button
-                  className="btn btn-sm btn-outline-secondary"
-                  onClick={() => setDeleteConfirm(null)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="btn btn-sm btn-danger"
-                  onClick={() => handleDelete(deleteConfirm.id)}
-                >
+                <button className="btn btn-sm btn-outline-secondary" onClick={() => setDeleteConfirm(null)}>Cancel</button>
+                <button className="btn btn-sm btn-danger" onClick={() => handleDelete(deleteConfirm.id)}>
                   <i className="bi bi-trash me-1"></i>Delete
                 </button>
               </div>
@@ -392,9 +418,7 @@ export default function Clients() {
         <div className="card shadow-sm mb-4">
           <div className="card-header bg-white">
             <h6 className="mb-0">
-              <i
-                className={`bi ${editingId ? 'bi-pencil-fill text-warning' : 'bi-person-plus-fill text-primary'} me-2`}
-              ></i>
+              <i className={`bi ${editingId ? 'bi-pencil-fill text-warning' : 'bi-person-plus-fill text-primary'} me-2`}></i>
               {editingId ? 'Edit Client' : 'Add New Client'}
             </h6>
           </div>
@@ -403,66 +427,36 @@ export default function Clients() {
               <div className="alert alert-success alert-dismissible fade show py-2" role="alert">
                 <i className="bi bi-check-circle-fill me-2"></i>
                 Client {editingId ? 'updated' : 'saved'} successfully!
-                <button
-                  type="button"
-                  className="btn-close btn-sm"
-                  onClick={() => setSubmitted(false)}
-                ></button>
+                <button type="button" className="btn-close btn-sm" onClick={() => setSubmitted(false)}></button>
               </div>
             )}
 
             <form onSubmit={handleSubmit}>
               <div className="row g-3">
+                {/* Basic Info */}
                 <div className="col-md-6">
-                  <label className="form-label">
-                    Full Name <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="text" className="form-control" name="name"
-                    value={form.name} onChange={handleChange}
-                    placeholder="John Doe" required
-                  />
+                  <label className="form-label">Full Name <span className="text-danger">*</span></label>
+                  <input type="text" className="form-control" name="name" value={form.name} onChange={handleChange} placeholder="John Doe" required />
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label">
-                    Phone Number <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="tel" className="form-control" name="phone"
-                    value={form.phone} onChange={handleChange}
-                    placeholder="+971 50 000 0000" required
-                  />
+                  <label className="form-label">Phone Number <span className="text-danger">*</span></label>
+                  <input type="tel" className="form-control" name="phone" value={form.phone} onChange={handleChange} placeholder="+971 50 000 0000" required />
                 </div>
                 <div className="col-md-4">
                   <label className="form-label">Email Address</label>
-                  <input
-                    type="email" className="form-control" name="email"
-                    value={form.email} onChange={handleChange}
-                    placeholder="john@example.com"
-                  />
+                  <input type="email" className="form-control" name="email" value={form.email} onChange={handleChange} placeholder="john@example.com" />
                 </div>
                 <div className="col-md-4">
                   <label className="form-label">GST Number</label>
-                  <input
-                    type="text" className="form-control" name="gst"
-                    value={form.gst} onChange={handleChange}
-                    placeholder="GST/VAT Number"
-                  />
+                  <input type="text" className="form-control" name="gst" value={form.gst} onChange={handleChange} placeholder="GST/VAT Number" />
                 </div>
                 <div className="col-md-4">
                   <label className="form-label">Company</label>
-                  <input
-                    type="text" className="form-control" name="company"
-                    value={form.company} onChange={handleChange}
-                    placeholder="Company name"
-                  />
+                  <input type="text" className="form-control" name="company" value={form.company} onChange={handleChange} placeholder="Company name" />
                 </div>
                 <div className="col-md-4">
                   <label className="form-label">Client Type</label>
-                  <select
-                    className="form-select" name="type"
-                    value={form.type} onChange={handleChange}
-                  >
+                  <select className="form-select" name="type" value={form.type} onChange={handleChange}>
                     <option value="">Select...</option>
                     <option>Residential</option>
                     <option>Commercial</option>
@@ -471,19 +465,8 @@ export default function Clients() {
                   </select>
                 </div>
                 <div className="col-md-4">
-                  <label className="form-label">Contract Value (INR)</label>
-                  <input
-                    type="number" className="form-control" name="contractValue"
-                    value={form.contractValue} onChange={handleChange}
-                    placeholder="0.00"
-                  />
-                </div>
-                <div className="col-md-4">
                   <label className="form-label">Payment Terms</label>
-                  <select
-                    className="form-select" name="paymentTerms"
-                    value={form.paymentTerms} onChange={handleChange}
-                  >
+                  <select className="form-select" name="paymentTerms" value={form.paymentTerms} onChange={handleChange}>
                     <option value="">Select...</option>
                     <option>Full upfront</option>
                     <option>50% advance</option>
@@ -491,35 +474,147 @@ export default function Clients() {
                     <option>Monthly</option>
                   </select>
                 </div>
+                <div className="col-md-4">
+                  <label className="form-label">Payment Status</label>
+                  <select className="form-select" name="paymentStatus" value={form.paymentStatus} onChange={handleChange}>
+                    <option value="">Select...</option>
+                    <option value="paid">Fully Paid</option>
+                    <option value="partial">Partial Payment</option>
+                    <option value="overdue">Overdue</option>
+                  </select>
+                </div>
+
+                {/* ── Payment Amounts Section ── */}
+                <div className="col-12">
+                  <hr className="my-1" />
+                  <p className="small fw-semibold text-muted mb-2">
+                    <i className="bi bi-cash-stack me-1"></i>Payment Details
+                  </p>
+                </div>
+
+                <div className="col-md-4">
+                  <label className="form-label">Contract Value (INR)</label>
+                  <div className="input-group">
+                    <span className="input-group-text">₹</span>
+                    <input
+                      type="number" className="form-control" name="contractValue"
+                      value={form.contractValue} onChange={handleChange}
+                      placeholder="0.00" min="0"
+                    />
+                  </div>
+                </div>
+
+                <div className="col-md-4">
+                  <label className="form-label text-success fw-semibold">
+                    <i className="bi bi-check-circle me-1"></i>Amount Paid (INR)
+                  </label>
+                  <div className="input-group">
+                    <span className="input-group-text bg-success bg-opacity-10 text-success border-success">₹</span>
+                    <input
+                      type="number"
+                      className="form-control border-success"
+                      style={{ boxShadow: 'none' }}
+                      name="paid"
+                      value={form.paid}
+                      onChange={handleChange}
+                      placeholder="0.00"
+                      min="0"
+                    />
+                  </div>
+                  <div className="form-text text-success">Amount received from client</div>
+                </div>
+
+                <div className="col-md-4">
+                  <label className="form-label text-danger fw-semibold">
+                    <i className="bi bi-hourglass-split me-1"></i>Pending Amount (INR)
+                  </label>
+                  <div className="input-group">
+                    <span className="input-group-text bg-danger bg-opacity-10 text-danger border-danger">₹</span>
+                    <input
+                      type="number"
+                      className="form-control border-danger"
+                      style={{ boxShadow: 'none' }}
+                      name="pending"
+                      value={form.pending}
+                      onChange={handleChange}
+                      placeholder="0.00"
+                      min="0"
+                    />
+                  </div>
+                  <div className="form-text text-danger">Auto-calculated or enter manually</div>
+                </div>
+
+                {/* Live payment summary preview */}
+                {(form.paid || form.pending || form.contractValue) && (
+                  <div className="col-12">
+                    <div className="p-3 rounded border bg-white">
+                      <p className="small fw-semibold mb-2 text-muted">Payment Summary Preview</p>
+                      <div className="row g-2 text-center">
+                        <div className="col-4">
+                          <div className="bg-light rounded p-2">
+                            <p className="small text-muted mb-0">Contract</p>
+                            <p className="mb-0 fw-semibold">
+                              INR {(parseFloat(form.contractValue) || 0).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="col-4">
+                          <div className="bg-success bg-opacity-10 rounded p-2">
+                            <p className="small text-success mb-0">Paid</p>
+                            <p className="mb-0 fw-semibold text-success">
+                              INR {(parseFloat(form.paid) || 0).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="col-4">
+                          <div className="bg-danger bg-opacity-10 rounded p-2">
+                            <p className="small text-danger mb-0">Pending</p>
+                            <p className="mb-0 fw-semibold text-danger">
+                              INR {(parseFloat(form.pending) || 0).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      {form.contractValue && (
+                        <div className="mt-2">
+                          <div className="progress" style={{ height: '6px' }}>
+                            <div
+                              className="progress-bar bg-success"
+                              style={{
+                                width: `${Math.min(100, Math.round(
+                                  ((parseFloat(form.paid) || 0) / (parseFloat(form.contractValue) || 1)) * 100
+                                ))}%`
+                              }}
+                            ></div>
+                          </div>
+                          <p className="small text-muted mt-1 mb-0 text-center">
+                            {Math.min(100, Math.round(
+                              ((parseFloat(form.paid) || 0) / (parseFloat(form.contractValue) || 1)) * 100
+                            ))}% collected
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="col-12"><hr className="my-1" /></div>
+
                 <div className="col-md-6">
                   <label className="form-label">Start Date</label>
-                  <input
-                    type="date" className="form-control" name="startDate"
-                    value={form.startDate} onChange={handleChange}
-                  />
+                  <input type="date" className="form-control" name="startDate" value={form.startDate} onChange={handleChange} />
                 </div>
                 <div className="col-md-6">
                   <label className="form-label">End Date</label>
-                  <input
-                    type="date" className="form-control" name="endDate"
-                    value={form.endDate} onChange={handleChange}
-                  />
+                  <input type="date" className="form-control" name="endDate" value={form.endDate} onChange={handleChange} />
                 </div>
                 <div className="col-12">
                   <label className="form-label">Address</label>
-                  <textarea
-                    className="form-control" name="address"
-                    value={form.address} onChange={handleChange}
-                    rows={2} placeholder="Full address..."
-                  />
+                  <textarea className="form-control" name="address" value={form.address} onChange={handleChange} rows={2} placeholder="Full address..." />
                 </div>
                 <div className="col-12">
                   <label className="form-label">Notes</label>
-                  <textarea
-                    className="form-control" name="notes"
-                    value={form.notes} onChange={handleChange}
-                    rows={2} placeholder="Special requirements or remarks..."
-                  />
+                  <textarea className="form-control" name="notes" value={form.notes} onChange={handleChange} rows={2} placeholder="Special requirements or remarks..." />
                 </div>
               </div>
 
@@ -532,9 +627,7 @@ export default function Clients() {
                   <i className="bi bi-arrow-counterclockwise me-2"></i>Reset
                 </button>
                 {editingId && (
-                  <button type="button" className="btn btn-outline-danger" onClick={closeForm}>
-                    Cancel Edit
-                  </button>
+                  <button type="button" className="btn btn-outline-danger" onClick={closeForm}>Cancel Edit</button>
                 )}
               </div>
             </form>
@@ -583,14 +676,8 @@ export default function Clients() {
                       onClick={() => { setSelected(client); setActiveTab("overview"); }}
                       className={`d-flex align-items-center p-3 border-bottom ${selected?.id === client.id ? 'bg-light' : ''}`}
                       style={{ cursor: 'pointer', transition: 'background-color 0.2s' }}
-                      onMouseEnter={(e) => {
-                        if (selected?.id !== client.id)
-                          e.currentTarget.style.backgroundColor = '#f8f9fa';
-                      }}
-                      onMouseLeave={(e) => {
-                        if (selected?.id !== client.id)
-                          e.currentTarget.style.backgroundColor = '';
-                      }}
+                      onMouseEnter={(e) => { if (selected?.id !== client.id) e.currentTarget.style.backgroundColor = '#f8f9fa'; }}
+                      onMouseLeave={(e) => { if (selected?.id !== client.id) e.currentTarget.style.backgroundColor = ''; }}
                     >
                       <div
                         className={`rounded-circle bg-${client.color} bg-opacity-10 d-flex align-items-center justify-content-center me-3`}
@@ -618,17 +705,11 @@ export default function Clients() {
                         </p>
                       </div>
 
-                      <span
-                        className={`badge ${statusBadge.class} bg-opacity-10 text-${statusBadge.class.replace('bg-', '')} me-2`}
-                      >
+                      <span className={`badge ${statusBadge.class} bg-opacity-10 text-${statusBadge.class.replace('bg-', '')} me-2`}>
                         {statusBadge.label}
                       </span>
 
-                      {/* Edit & Delete buttons – stop row click propagation */}
-                      <div
-                        className="d-flex gap-1"
-                        onClick={(e) => e.stopPropagation()}
-                      >
+                      <div className="d-flex gap-1" onClick={(e) => e.stopPropagation()}>
                         <button
                           className="btn btn-sm btn-outline-secondary py-0 px-2"
                           title="Edit client"
@@ -678,19 +759,14 @@ export default function Clients() {
                 <div>
                   <h6 className="mb-0">{selected.name}</h6>
                   <p className="small text-muted mb-1">{selected.type} · {selected.address}</p>
-                  <span
-                    className={`badge ${getStatusBadge(selected.status).class} bg-opacity-10 text-${getStatusBadge(selected.status).class.replace('bg-', '')}`}
-                  >
+                  <span className={`badge ${getStatusBadge(selected.status).class} bg-opacity-10 text-${getStatusBadge(selected.status).class.replace('bg-', '')}`}>
                     {getStatusBadge(selected.status).label}
                   </span>
                 </div>
               </div>
 
               <div className="card-body p-0">
-                <ul
-                  className="nav nav-tabs nav-fill"
-                  style={{ padding: '0 12px', borderBottom: '1px solid #dee2e6' }}
-                >
+                <ul className="nav nav-tabs nav-fill" style={{ padding: '0 12px', borderBottom: '1px solid #dee2e6' }}>
                   {["overview", "payments", "projects"].map((tab) => (
                     <li className="nav-item" key={tab}>
                       <button
@@ -763,21 +839,13 @@ export default function Clients() {
                       </div>
 
                       <div className="d-flex gap-2 mt-3">
-                        <button
-                          className="btn btn-outline-secondary btn-sm flex-grow-1"
-                          onClick={() => handleEdit(selected)}
-                        >
+                        <button className="btn btn-outline-secondary btn-sm flex-grow-1" onClick={() => handleEdit(selected)}>
                           <i className="bi bi-pencil me-1"></i>Edit
                         </button>
-                        <button className="btn btn-primary btn-sm flex-grow-1">
-                          Record Payment
-                        </button>
+                        <button className="btn btn-primary btn-sm flex-grow-1">Record Payment</button>
                       </div>
                       <div className="mt-2">
-                        <button
-                          className="btn btn-outline-danger btn-sm w-100"
-                          onClick={() => setDeleteConfirm(selected)}
-                        >
+                        <button className="btn btn-outline-danger btn-sm w-100" onClick={() => setDeleteConfirm(selected)}>
                           <i className="bi bi-trash me-1"></i>Delete Client
                         </button>
                       </div>
@@ -792,23 +860,16 @@ export default function Clients() {
                         <p className="text-muted small text-center py-3">No invoices yet.</p>
                       )}
                       {selected.invoices.map((invoice) => (
-                        <div
-                          key={invoice.id}
-                          className="bg-light rounded p-2 mb-2 d-flex justify-content-between align-items-center"
-                        >
+                        <div key={invoice.id} className="bg-light rounded p-2 mb-2 d-flex justify-content-between align-items-center">
                           <div>
                             <p className="mb-0 small fw-semibold">{invoice.id}</p>
                             <p className="small text-muted mb-0">{invoice.date} · {invoice.type}</p>
                           </div>
                           <div className="text-end">
-                            <p
-                              className={`mb-0 small fw-semibold ${invoice.status === 'paid' ? 'text-success' : 'text-danger'}`}
-                            >
+                            <p className={`mb-0 small fw-semibold ${invoice.status === 'paid' ? 'text-success' : 'text-danger'}`}>
                               {invoice.status === 'paid' ? '+' : ''}INR {invoice.amount.toLocaleString()}
                             </p>
-                            <span
-                              className={`badge ${getInvoiceStatusBadge(invoice.status)} bg-opacity-10 text-${getInvoiceStatusBadge(invoice.status).replace('bg-', '')}`}
-                            >
+                            <span className={`badge ${getInvoiceStatusBadge(invoice.status)} bg-opacity-10 text-${getInvoiceStatusBadge(invoice.status).replace('bg-', '')}`}>
                               {invoice.status}
                             </span>
                           </div>
@@ -826,17 +887,12 @@ export default function Clients() {
                         <p className="text-muted small text-center py-3">No projects linked.</p>
                       )}
                       {selected.projects.map((project, idx) => (
-                        <div
-                          key={idx}
-                          className="bg-light rounded p-2 mb-2 d-flex justify-content-between align-items-center"
-                        >
+                        <div key={idx} className="bg-light rounded p-2 mb-2 d-flex justify-content-between align-items-center">
                           <div>
                             <p className="mb-0 small fw-semibold">{project.name}</p>
                             <p className="small text-muted mb-0">{project.detail}</p>
                           </div>
-                          <span
-                            className={`badge ${getProjectStatusBadge(project.status)} bg-opacity-10 text-${getProjectStatusBadge(project.status).replace('bg-', '')}`}
-                          >
+                          <span className={`badge ${getProjectStatusBadge(project.status)} bg-opacity-10 text-${getProjectStatusBadge(project.status).replace('bg-', '')}`}>
                             {project.status === "completed" ? "Completed" : "In progress"}
                           </span>
                         </div>
@@ -866,11 +922,6 @@ export default function Clients() {
         </div>
 
       </div>
-
-      <style jsx>{`
-        .cursor-pointer { cursor: pointer; }
-        .transition-hover { transition: background-color 0.2s; }
-      `}</style>
     </div>
   );
 }
