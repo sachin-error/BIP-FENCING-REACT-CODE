@@ -16,6 +16,48 @@ const targets = [
 ];
 
 export default function Dashboard() {
+  const [data, setData] = useState({
+    invoices: [],
+    purchases: [],
+    quotations: [],
+    employees: [],
+    attendance: [],
+    clients: [],
+    products: [],
+  });
+
+  useEffect(() => {
+    setData({
+      invoices: JSON.parse(localStorage.getItem("invoices")) || [],
+      purchases: JSON.parse(localStorage.getItem("purchaseBills")) || [],
+      quotations: JSON.parse(localStorage.getItem("quotes")) || [],
+      employees: JSON.parse(localStorage.getItem("employees")) || [],
+      attendance: JSON.parse(localStorage.getItem("attendance")) || [],
+      clients: JSON.parse(localStorage.getItem("bip_clients")) || [],
+      products: JSON.parse(localStorage.getItem("products")) || [],
+    });
+  }, []);
+
+  // 🔢 CALCULATIONS
+  const totalRevenue = data.invoices.reduce((s, i) => s + (i.total || 0), 0);
+  const totalExpense = data.purchases.reduce((s, p) => s + (p.grandTotal || 0), 0);
+  const profit = totalRevenue - totalExpense;
+
+  const present = data.attendance.filter(a => a.status === "Present").length;
+  const absent = data.attendance.filter(a => a.status === "Absent").length;
+
+  const lowStock = data.products.filter(p => (p.stock || 0) < 10);
+
+  // 🔷 STAT CARDS (UPDATED)
+  const statCards = [
+    { label: 'Total Revenue', value: totalRevenue.toFixed(2), icon: 'bi-currency-rupee', color: 'card-green', unit: '₹ ' },
+    { label: 'Purchase Expense', value: totalExpense.toFixed(2), icon: 'bi-credit-card', color: 'card-red', unit: '₹ ' },
+    { label: 'Profit', value: profit.toFixed(2), icon: 'bi-graph-up', color: 'card-blue', unit: '₹ ' },
+    { label: 'Employees', value: data.employees.length, icon: 'bi-people', color: 'card-orange' },
+    { label: 'Present Today', value: present, icon: 'bi-check-circle', color: 'card-green' },
+    { label: 'Clients', value: data.clients.length, icon: 'bi-person-lines-fill', color: 'card-blue' },
+  ];
+
   return (
     <>
       <div className="page-header">
