@@ -420,7 +420,7 @@ export default function Clients() {
                   <input
                     type="text" className="form-control" name="name"
                     value={form.name} onChange={handleChange}
-                    placeholder="John Doe" required
+                    placeholder="John" required
                   />
                 </div>
                 <div className="col-md-6">
@@ -428,7 +428,7 @@ export default function Clients() {
                     Phone Number <span className="text-danger">*</span>
                   </label>
                   <input
-                    type="tel" className="form-control" name="phone"
+                    type="number" className="form-control" name="phone"
                     value={form.phone} onChange={handleChange}
                     placeholder="+971 50 000 0000" required
                   />
