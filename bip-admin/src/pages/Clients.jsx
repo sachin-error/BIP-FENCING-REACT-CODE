@@ -145,7 +145,7 @@ const clientsData = [
   },
   {
     id: 3, initials: "MH", name: "Mohammed Hassan", email: "m.hassan@gmail.com",
-    phone: "+971 52 456 7890", gst: "", company: "",
+    phone: "+91 52 456 78901", gst: "", company: "",
     type: "Residential", address: "Sharjah", since: "Nov 2024",
     contractValue: 20500, paid: 8000, pending: 12501, status: "overdue", color: "warning",
     invoices: [
