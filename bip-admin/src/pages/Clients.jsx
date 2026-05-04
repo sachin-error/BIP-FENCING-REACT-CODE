@@ -1,121 +1,6 @@
-// import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-// const initialForm = { name: '', phone: '', email: '', address: '', gst: '' };
-
-// export default function Clients() {
-//   const [form, setForm] = useState(initialForm);
-//   const [submitted, setSubmitted] = useState(false);
-
-//   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-
-//   const handleSubmit = (e) => {
-//     e.preventDefault();
-//     console.log('Client Form Data:', form);
-//     setSubmitted(true);
-//     setTimeout(() => setSubmitted(false), 3000);
-//   };
-
-//   const handleReset = () => setForm(initialForm);
-
-//   return (
-//     <>
-//       <div className="page-header">
-//         <h1>Clients</h1>
-//         <p>Add and manage your client information</p>
-//       </div>
-
-//       <div className="client-form-card shadow-sm">
-//         <h6 style={{ fontWeight: 700, fontSize: 14, color: '#0d1117', marginBottom: 20 }}>
-//           <i className="bi bi-person-plus-fill me-2" style={{ color: '#0969da' }}></i>
-//           Add New Client
-//         </h6>
-
-//         {submitted && (
-//           <div className="alert alert-success py-2 mb-3" style={{ fontSize: 13, borderRadius: 8 }}>
-//             <i className="bi bi-check-circle-fill me-2"></i>
-//             Client data logged to console successfully!
-//           </div>
-//         )}
-
-//         <form onSubmit={handleSubmit}>
-//           <div className="row g-3">
-//             <div className="col-md-6">
-//               <label className="form-label">Full Name <span style={{ color: '#cf222e' }}>*</span></label>
-//               <input
-//                 type="text"
-//                 className="form-control"
-//                 name="name"
-//                 value={form.name}
-//                 onChange={handleChange}
-//                 placeholder="John Doe"
-//                 required
-//               />
-//             </div>
-//             <div className="col-md-6">
-//               <label className="form-label">Phone Number <span style={{ color: '#cf222e' }}>*</span></label>
-//               <input
-//                 type="tel"
-//                 className="form-control"
-//                 name="phone"
-//                 value={form.phone}
-//                 onChange={handleChange}
-//                 placeholder="+971 50 000 0000"
-//                 required
-//               />
-//             </div>
-//             <div className="col-md-6">
-//               <label className="form-label">Email Address</label>
-//               <input
-//                 type="email"
-//                 className="form-control"
-//                 name="email"
-//                 value={form.email}
-//                 onChange={handleChange}
-//                 placeholder="john@example.com"
-//               />
-//             </div>
-//             <div className="col-md-6">
-//               <label className="form-label">GST Number</label>
-//               <input
-//                 type="text"
-//                 className="form-control"
-//                 name="gst"
-//                 value={form.gst}
-//                 onChange={handleChange}
-//                 placeholder="GST/VAT Number"
-//               />
-//             </div>
-//             <div className="col-12">
-//               <label className="form-label">Address</label>
-//               <textarea
-//                 className="form-control"
-//                 name="address"
-//                 value={form.address}
-//                 onChange={handleChange}
-//                 rows={3}
-//                 placeholder="Full address..."
-//               />
-//             </div>
-//           </div>
-
-//           <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
-//             <button type="submit" className="btn-submit">
-//               <i className="bi bi-check-lg me-2"></i>Submit
-//             </button>
-//             <button type="button" className="btn-reset" onClick={handleReset}>
-//               <i className="bi bi-arrow-counterclockwise me-2"></i>Reset
-//             </button>
-//           </div>
-//         </form>
-//       </div>
-//     </>
-//   );
-// }
-
-
-import { useState } from 'react';
-
-const clientsData = [
+const defaultClientsData = [
   {
     id: 1, initials: "AK", name: "Ahmed Al Kaabi", email: "ahmed@alkaabi.ae",
     phone: "+971 50 123 4567", gst: "AE123456789", company: "Al Kaabi Trading LLC",
@@ -197,89 +82,267 @@ const clientsData = [
   },
 ];
 
+const COLORS = ["primary", "success", "warning", "info", "danger", "secondary"];
+
+const getInitials = (name) =>
+  name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+
 const getStatusBadge = (status) => {
   const badges = {
     paid: { class: 'bg-success', label: 'Fully paid' },
     partial: { class: 'bg-warning', label: 'Partial payment' },
-    overdue: { class: 'bg-danger', label: 'Overdue' }
+    overdue: { class: 'bg-danger', label: 'Overdue' },
   };
   return badges[status] || badges.partial;
 };
 
 const getInvoiceStatusBadge = (status) => {
-  const badges = {
-    paid: 'bg-success',
-    pending: 'bg-warning',
-    overdue: 'bg-danger'
-  };
+  const badges = { paid: 'bg-success', pending: 'bg-warning', overdue: 'bg-danger' };
   return badges[status] || 'bg-secondary';
 };
 
-const getProjectStatusBadge = (status) => {
-  return status === 'completed' ? 'bg-success' : 'bg-warning';
-};
+const getProjectStatusBadge = (status) =>
+  status === 'completed' ? 'bg-success' : 'bg-warning';
 
-const initialForm = { 
-  name: '', phone: '', email: '', address: '', gst: '', 
+const initialForm = {
+  name: '', phone: '', email: '', address: '', gst: '',
   company: '', type: '', contractValue: '', paymentTerms: '',
-  startDate: '', endDate: '', notes: '' 
+  startDate: '', endDate: '', notes: '',
 };
 
 export default function Clients() {
+  // ── Load from localStorage on first render, fall back to defaults ──
+  const [clientsData, setClientsData] = useState(() => {
+    try {
+      const saved = localStorage.getItem('bip_clients');
+      return saved ? JSON.parse(saved) : defaultClientsData;
+    } catch {
+      return defaultClientsData;
+    }
+  });
+
   const [form, setForm] = useState(initialForm);
   const [submitted, setSubmitted] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [selected, setSelected] = useState(clientsData[0]);
+  const [selected, setSelected] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);       // null = adding new
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // client object to confirm delete
+
+  // Set initial selected client once data loads
+  useEffect(() => {
+    if (clientsData.length > 0 && !selected) {
+      setSelected(clientsData[0]);
+    }
+  }, []);
+
+  // ── Persist to localStorage whenever clientsData changes ──
+  useEffect(() => {
+    localStorage.setItem('bip_clients', JSON.stringify(clientsData));
+  }, [clientsData]);
 
   const totalRevenue = clientsData.reduce((s, c) => s + c.contractValue, 0);
   const totalPaid = clientsData.reduce((s, c) => s + c.paid, 0);
   const totalPending = clientsData.reduce((s, c) => s + c.pending, 0);
   const overdueCount = clientsData.filter((c) => c.status === "overdue").length;
-  const paidPct = Math.round((totalPaid / totalRevenue) * 100);
+  const paidPct = totalRevenue ? Math.round((totalPaid / totalRevenue) * 100) : 0;
 
   const filtered = clientsData.filter((c) => {
     const q = search.toLowerCase();
     return (
-      (c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) ||
-       c.phone.includes(q) || (c.gst && c.gst.toLowerCase().includes(q))) &&
+      (c.name.toLowerCase().includes(q) ||
+        c.email.toLowerCase().includes(q) ||
+        c.phone.includes(q) ||
+        (c.gst && c.gst.toLowerCase().includes(q))) &&
       (statusFilter ? c.status === statusFilter : true)
     );
   });
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
+  // ── Save (Add or Update) ──
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Client Form Data:', form);
+    const cv = parseFloat(form.contractValue) || 0;
+
+    if (editingId !== null) {
+      // UPDATE existing client (preserve invoices, projects, paid, pending, status, color, since)
+      setClientsData((prev) =>
+        prev.map((c) =>
+          c.id === editingId
+            ? {
+                ...c,
+                name: form.name,
+                phone: form.phone,
+                email: form.email,
+                address: form.address,
+                gst: form.gst,
+                company: form.company,
+                type: form.type,
+                contractValue: cv,
+                paymentTerms: form.paymentTerms,
+                startDate: form.startDate,
+                endDate: form.endDate,
+                notes: form.notes,
+                initials: getInitials(form.name),
+              }
+            : c
+        )
+      );
+      // Keep right panel in sync
+      setSelected((prev) =>
+        prev?.id === editingId
+          ? {
+              ...prev,
+              name: form.name,
+              phone: form.phone,
+              email: form.email,
+              address: form.address,
+              gst: form.gst,
+              company: form.company,
+              type: form.type,
+              contractValue: cv,
+              initials: getInitials(form.name),
+            }
+          : prev
+      );
+      setEditingId(null);
+    } else {
+      // ADD new client
+      const newClient = {
+        id: Date.now(),
+        initials: getInitials(form.name),
+        name: form.name,
+        phone: form.phone,
+        email: form.email,
+        address: form.address,
+        gst: form.gst,
+        company: form.company,
+        type: form.type,
+        contractValue: cv,
+        paid: 0,
+        pending: cv,
+        status: "partial",
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        since: new Date().toLocaleString('en-US', { month: 'short', year: 'numeric' }),
+        paymentTerms: form.paymentTerms,
+        startDate: form.startDate,
+        endDate: form.endDate,
+        notes: form.notes,
+        invoices: [],
+        projects: [],
+      };
+      setClientsData((prev) => [...prev, newClient]);
+      setSelected(newClient);
+    }
+
     setSubmitted(true);
     setTimeout(() => setSubmitted(false), 3000);
     setForm(initialForm);
     setShowForm(false);
   };
 
-  const handleReset = () => setForm(initialForm);
+  // ── Open Edit form pre-filled ──
+  const handleEdit = (client) => {
+    setForm({
+      name: client.name,
+      phone: client.phone,
+      email: client.email,
+      address: client.address,
+      gst: client.gst || '',
+      company: client.company || '',
+      type: client.type || '',
+      contractValue: client.contractValue || '',
+      paymentTerms: client.paymentTerms || '',
+      startDate: client.startDate || '',
+      endDate: client.endDate || '',
+      notes: client.notes || '',
+    });
+    setEditingId(client.id);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // ── Delete after confirmation ──
+  const handleDelete = (clientId) => {
+    setClientsData((prev) => {
+      const next = prev.filter((c) => c.id !== clientId);
+      if (selected?.id === clientId) {
+        setSelected(next[0] || null);
+      }
+      return next;
+    });
+    setDeleteConfirm(null);
+  };
+
+  const handleReset = () => {
+    setForm(initialForm);
+    setEditingId(null);
+  };
+
+  const closeForm = () => {
+    setShowForm(false);
+    setEditingId(null);
+    setForm(initialForm);
+  };
 
   return (
     <div className="container-fluid p-4" style={{ backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
-      {/* Page Header */}
+
+      {/* ── Delete Confirmation Modal ── */}
+      {deleteConfirm && (
+        <div
+          className="modal show d-block"
+          style={{ background: 'rgba(0,0,0,0.45)', zIndex: 1055 }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content shadow-lg">
+              <div className="modal-header border-0 pb-0">
+                <h6 className="modal-title text-danger">
+                  <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                  Delete Client
+                </h6>
+              </div>
+              <div className="modal-body">
+                <p className="mb-0">
+                  Are you sure you want to delete{' '}
+                  <strong>{deleteConfirm.name}</strong>? This action cannot be undone.
+                </p>
+              </div>
+              <div className="modal-footer border-0 pt-0">
+                <button
+                  className="btn btn-sm btn-outline-secondary"
+                  onClick={() => setDeleteConfirm(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn btn-sm btn-danger"
+                  onClick={() => handleDelete(deleteConfirm.id)}
+                >
+                  <i className="bi bi-trash me-1"></i>Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Page Header ── */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h1 className="h3 mb-1">Clients</h1>
           <p className="text-muted mb-0">Manage client accounts, payments and billing</p>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="btn btn-primary"
-        >
+        <button onClick={() => (showForm ? closeForm() : setShowForm(true))} className="btn btn-primary">
           <i className="bi bi-plus-lg me-2"></i>
-          {showForm ? "Close Form" : "Add Client"}
+          {showForm ? 'Close Form' : 'Add Client'}
         </button>
       </div>
 
-      {/* Stats Cards */}
+      {/* ── Stats Cards ── */}
       <div className="row g-3 mb-4">
         <div className="col-md-3">
           <div className="card shadow-sm border-0 h-100">
@@ -316,92 +379,90 @@ export default function Clients() {
             <div className="card-body">
               <p className="text-muted small mb-1">Pending Amount</p>
               <h2 className="mb-2 text-danger">INR {totalPending.toLocaleString()}</h2>
-              <span className="badge bg-warning bg-opacity-10 text-warning">{overdueCount} overdue clients</span>
+              <span className="badge bg-warning bg-opacity-10 text-warning">
+                {overdueCount} overdue clients
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Add Client Form */}
+      {/* ── Add / Edit Client Form ── */}
       {showForm && (
         <div className="card shadow-sm mb-4">
           <div className="card-header bg-white">
             <h6 className="mb-0">
-              <i className="bi bi-person-plus-fill me-2 text-primary"></i>
-              Add New Client
+              <i
+                className={`bi ${editingId ? 'bi-pencil-fill text-warning' : 'bi-person-plus-fill text-primary'} me-2`}
+              ></i>
+              {editingId ? 'Edit Client' : 'Add New Client'}
             </h6>
           </div>
           <div className="card-body">
             {submitted && (
               <div className="alert alert-success alert-dismissible fade show py-2" role="alert">
                 <i className="bi bi-check-circle-fill me-2"></i>
-                Client data saved successfully!
-                <button type="button" className="btn-close btn-sm" onClick={() => setSubmitted(false)}></button>
+                Client {editingId ? 'updated' : 'saved'} successfully!
+                <button
+                  type="button"
+                  className="btn-close btn-sm"
+                  onClick={() => setSubmitted(false)}
+                ></button>
               </div>
             )}
 
             <form onSubmit={handleSubmit}>
               <div className="row g-3">
                 <div className="col-md-6">
-                  <label className="form-label">Full Name <span className="text-danger">*</span></label>
+                  <label className="form-label">
+                    Full Name <span className="text-danger">*</span>
+                  </label>
                   <input
-                    type="text"
-                    className="form-control"
-                    name="name"
-                    value={form.name}
-                    onChange={handleChange}
-                    placeholder="John Doe"
-                    required
+                    type="text" className="form-control" name="name"
+                    value={form.name} onChange={handleChange}
+                    placeholder="John" required
                   />
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label">Phone Number <span className="text-danger">*</span></label>
+                  <label className="form-label">
+                    Phone Number <span className="text-danger">*</span>
+                  </label>
                   <input
-                    type="tel"
-                    className="form-control"
-                    name="phone"
-                    value={form.phone}
-                    onChange={handleChange}
-                    placeholder="+971 50 000 0000"
-                    required
+                    type="number" className="form-control" name="phone"
+                    value={form.phone} onChange={handleChange}
+                    placeholder="+971 50 000 0000" required
                   />
                 </div>
                 <div className="col-md-4">
                   <label className="form-label">Email Address</label>
                   <input
-                    type="email"
-                    className="form-control"
-                    name="email"
-                    value={form.email}
-                    onChange={handleChange}
+                    type="email" className="form-control" name="email"
+                    value={form.email} onChange={handleChange}
                     placeholder="john@example.com"
                   />
                 </div>
                 <div className="col-md-4">
                   <label className="form-label">GST Number</label>
                   <input
-                    type="text"
-                    className="form-control"
-                    name="gst"
-                    value={form.gst}
-                    onChange={handleChange}
+                    type="text" className="form-control" name="gst"
+                    value={form.gst} onChange={handleChange}
                     placeholder="GST/VAT Number"
                   />
                 </div>
                 <div className="col-md-4">
                   <label className="form-label">Company</label>
                   <input
-                    type="text"
-                    className="form-control"
-                    name="company"
-                    value={form.company}
-                    onChange={handleChange}
+                    type="text" className="form-control" name="company"
+                    value={form.company} onChange={handleChange}
                     placeholder="Company name"
                   />
                 </div>
                 <div className="col-md-4">
                   <label className="form-label">Client Type</label>
-                  <select className="form-select" name="type" value={form.type} onChange={handleChange}>
+                  <select
+                    className="form-select" name="type"
+                    value={form.type} onChange={handleChange}
+                  >
                     <option value="">Select...</option>
                     <option>Residential</option>
                     <option>Commercial</option>
@@ -412,17 +473,17 @@ export default function Clients() {
                 <div className="col-md-4">
                   <label className="form-label">Contract Value (INR)</label>
                   <input
-                    type="number"
-                    className="form-control"
-                    name="contractValue"
-                    value={form.contractValue}
-                    onChange={handleChange}
+                    type="number" className="form-control" name="contractValue"
+                    value={form.contractValue} onChange={handleChange}
                     placeholder="0.00"
                   />
                 </div>
                 <div className="col-md-4">
                   <label className="form-label">Payment Terms</label>
-                  <select className="form-select" name="paymentTerms" value={form.paymentTerms} onChange={handleChange}>
+                  <select
+                    className="form-select" name="paymentTerms"
+                    value={form.paymentTerms} onChange={handleChange}
+                  >
                     <option value="">Select...</option>
                     <option>Full upfront</option>
                     <option>50% advance</option>
@@ -432,68 +493,72 @@ export default function Clients() {
                 </div>
                 <div className="col-md-6">
                   <label className="form-label">Start Date</label>
-                  <input type="date" className="form-control" name="startDate" value={form.startDate} onChange={handleChange} />
+                  <input
+                    type="date" className="form-control" name="startDate"
+                    value={form.startDate} onChange={handleChange}
+                  />
                 </div>
                 <div className="col-md-6">
                   <label className="form-label">End Date</label>
-                  <input type="date" className="form-control" name="endDate" value={form.endDate} onChange={handleChange} />
+                  <input
+                    type="date" className="form-control" name="endDate"
+                    value={form.endDate} onChange={handleChange}
+                  />
                 </div>
                 <div className="col-12">
                   <label className="form-label">Address</label>
                   <textarea
-                    className="form-control"
-                    name="address"
-                    value={form.address}
-                    onChange={handleChange}
-                    rows={2}
-                    placeholder="Full address..."
+                    className="form-control" name="address"
+                    value={form.address} onChange={handleChange}
+                    rows={2} placeholder="Full address..."
                   />
                 </div>
                 <div className="col-12">
                   <label className="form-label">Notes</label>
                   <textarea
-                    className="form-control"
-                    name="notes"
-                    value={form.notes}
-                    onChange={handleChange}
-                    rows={2}
-                    placeholder="Special requirements or remarks..."
+                    className="form-control" name="notes"
+                    value={form.notes} onChange={handleChange}
+                    rows={2} placeholder="Special requirements or remarks..."
                   />
                 </div>
               </div>
 
               <div className="mt-4 d-flex gap-2">
                 <button type="submit" className="btn btn-primary">
-                  <i className="bi bi-check-lg me-2"></i>Save Client
+                  <i className="bi bi-check-lg me-2"></i>
+                  {editingId ? 'Update Client' : 'Save Client'}
                 </button>
                 <button type="button" className="btn btn-outline-secondary" onClick={handleReset}>
                   <i className="bi bi-arrow-counterclockwise me-2"></i>Reset
                 </button>
+                {editingId && (
+                  <button type="button" className="btn btn-outline-danger" onClick={closeForm}>
+                    Cancel Edit
+                  </button>
+                )}
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* Main Content - Two Columns */}
+      {/* ── Main Content – Two Columns ── */}
       <div className="row g-3">
-        {/* Left Column - Client Directory */}
+
+        {/* Left Column – Client Directory */}
         <div className="col-lg-8">
           <div className="card shadow-sm">
             <div className="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
               <h6 className="mb-0">Client Directory</h6>
               <div className="d-flex gap-2">
                 <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  placeholder="Search clients..."
-                  value={search}
+                  type="text" className="form-control form-control-sm"
+                  placeholder="Search clients..." value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   style={{ width: '200px' }}
                 />
                 <select
-                  className="form-select form-select-sm"
-                  value={statusFilter}
+                  className="form-select form-select-sm" value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                   style={{ width: '130px' }}
                 >
@@ -504,35 +569,36 @@ export default function Clients() {
                 </select>
               </div>
             </div>
+
             <div className="card-body p-0">
               <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
                 {filtered.length === 0 && (
                   <p className="text-center text-muted py-5 mb-0">No clients found.</p>
                 )}
-                {filtered.map((client, idx) => {
+                {filtered.map((client) => {
                   const statusBadge = getStatusBadge(client.status);
                   return (
                     <div
                       key={client.id}
-                      onClick={() => {
-                        setSelected(client);
-                        setActiveTab("overview");
-                      }}
-                      className={`d-flex align-items-center p-3 border-bottom cursor-pointer transition-hover ${
-                        selected?.id === client.id ? 'bg-light' : ''
-                      }`}
+                      onClick={() => { setSelected(client); setActiveTab("overview"); }}
+                      className={`d-flex align-items-center p-3 border-bottom ${selected?.id === client.id ? 'bg-light' : ''}`}
                       style={{ cursor: 'pointer', transition: 'background-color 0.2s' }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+                      onMouseEnter={(e) => {
+                        if (selected?.id !== client.id)
+                          e.currentTarget.style.backgroundColor = '#f8f9fa';
+                      }}
                       onMouseLeave={(e) => {
-                        if (selected?.id !== client.id) {
+                        if (selected?.id !== client.id)
                           e.currentTarget.style.backgroundColor = '';
-                        }
                       }}
                     >
-                      <div className={`rounded-circle bg-${client.color} bg-opacity-10 d-flex align-items-center justify-content-center me-3`}
-                        style={{ width: '40px', height: '40px', flexShrink: 0 }}>
+                      <div
+                        className={`rounded-circle bg-${client.color} bg-opacity-10 d-flex align-items-center justify-content-center me-3`}
+                        style={{ width: '40px', height: '40px', flexShrink: 0 }}
+                      >
                         <span className={`text-${client.color} fw-bold`}>{client.initials}</span>
                       </div>
+
                       <div className="flex-grow-1">
                         <p className="mb-0 fw-semibold">{client.name}</p>
                         <p className="small text-muted mb-0">
@@ -540,22 +606,54 @@ export default function Clients() {
                           {client.gst && ` · ${client.gst}`}
                         </p>
                       </div>
+
                       <div className="text-end me-3">
-                        <p className="mb-0 small fw-semibold text-success">INR {client.paid.toLocaleString()} paid</p>
+                        <p className="mb-0 small fw-semibold text-success">
+                          INR {client.paid.toLocaleString()} paid
+                        </p>
                         <p className={`mb-0 small ${client.pending > 0 ? 'text-danger' : 'text-success'}`}>
-                          {client.pending > 0 ? `INR ${client.pending.toLocaleString()} pending` : "Fully paid"}
+                          {client.pending > 0
+                            ? `INR ${client.pending.toLocaleString()} pending`
+                            : 'Fully paid'}
                         </p>
                       </div>
-                      <span className={`badge ${statusBadge.class} bg-opacity-10 text-${statusBadge.class.replace('bg-', '')}`}>
+
+                      <span
+                        className={`badge ${statusBadge.class} bg-opacity-10 text-${statusBadge.class.replace('bg-', '')} me-2`}
+                      >
                         {statusBadge.label}
                       </span>
+
+                      {/* Edit & Delete buttons – stop row click propagation */}
+                      <div
+                        className="d-flex gap-1"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          className="btn btn-sm btn-outline-secondary py-0 px-2"
+                          title="Edit client"
+                          onClick={() => handleEdit(client)}
+                        >
+                          <i className="bi bi-pencil" style={{ fontSize: '12px' }}></i>
+                        </button>
+                        <button
+                          className="btn btn-sm btn-outline-danger py-0 px-2"
+                          title="Delete client"
+                          onClick={() => setDeleteConfirm(client)}
+                        >
+                          <i className="bi bi-trash" style={{ fontSize: '12px' }}></i>
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
               </div>
             </div>
+
             <div className="card-footer bg-white d-flex justify-content-between align-items-center">
-              <span className="small text-muted">Showing {filtered.length} of {clientsData.length} clients</span>
+              <span className="small text-muted">
+                Showing {filtered.length} of {clientsData.length} clients
+              </span>
               <div className="d-flex gap-1">
                 <button className="btn btn-sm btn-outline-secondary">Prev</button>
                 <button className="btn btn-sm btn-primary">1</button>
@@ -566,26 +664,33 @@ export default function Clients() {
           </div>
         </div>
 
-        {/* Right Column - Client Details */}
+        {/* Right Column – Client Details */}
         <div className="col-lg-4">
           {selected && (
             <div className="card shadow-sm mb-3">
               <div className="card-header bg-white d-flex align-items-center gap-3">
-                <div className={`rounded-circle bg-${selected.color} bg-opacity-10 d-flex align-items-center justify-content-center`}
-                  style={{ width: '48px', height: '48px' }}>
+                <div
+                  className={`rounded-circle bg-${selected.color} bg-opacity-10 d-flex align-items-center justify-content-center`}
+                  style={{ width: '48px', height: '48px' }}
+                >
                   <span className={`text-${selected.color} fw-bold fs-5`}>{selected.initials}</span>
                 </div>
                 <div>
                   <h6 className="mb-0">{selected.name}</h6>
                   <p className="small text-muted mb-1">{selected.type} · {selected.address}</p>
-                  <span className={`badge ${getStatusBadge(selected.status).class} bg-opacity-10 text-${getStatusBadge(selected.status).class.replace('bg-', '')}`}>
+                  <span
+                    className={`badge ${getStatusBadge(selected.status).class} bg-opacity-10 text-${getStatusBadge(selected.status).class.replace('bg-', '')}`}
+                  >
                     {getStatusBadge(selected.status).label}
                   </span>
                 </div>
               </div>
 
               <div className="card-body p-0">
-                <ul className="nav nav-tabs nav-fill" style={{ padding: '0 12px', borderBottom: '1px solid #dee2e6' }}>
+                <ul
+                  className="nav nav-tabs nav-fill"
+                  style={{ padding: '0 12px', borderBottom: '1px solid #dee2e6' }}
+                >
                   {["overview", "payments", "projects"].map((tab) => (
                     <li className="nav-item" key={tab}>
                       <button
@@ -600,6 +705,8 @@ export default function Clients() {
                 </ul>
 
                 <div style={{ padding: '16px', maxHeight: '500px', overflowY: 'auto' }}>
+
+                  {/* Overview Tab */}
                   {activeTab === "overview" && (
                     <div>
                       <div className="row g-2 mb-3">
@@ -620,12 +727,20 @@ export default function Clients() {
                       <div className="mb-3">
                         <div className="d-flex justify-content-between small text-muted mb-1">
                           <span>Payment progress</span>
-                          <span>{Math.round((selected.paid / selected.contractValue) * 100)}%</span>
+                          <span>
+                            {selected.contractValue
+                              ? Math.round((selected.paid / selected.contractValue) * 100)
+                              : 0}%
+                          </span>
                         </div>
                         <div className="progress" style={{ height: '6px' }}>
                           <div
                             className="progress-bar bg-success"
-                            style={{ width: `${Math.round((selected.paid / selected.contractValue) * 100)}%` }}
+                            style={{
+                              width: `${selected.contractValue
+                                ? Math.round((selected.paid / selected.contractValue) * 100)
+                                : 0}%`,
+                            }}
                           ></div>
                         </div>
                       </div>
@@ -648,26 +763,52 @@ export default function Clients() {
                       </div>
 
                       <div className="d-flex gap-2 mt-3">
-                        <button className="btn btn-outline-secondary btn-sm flex-grow-1">Edit</button>
-                        <button className="btn btn-primary btn-sm flex-grow-1">Record Payment</button>
+                        <button
+                          className="btn btn-outline-secondary btn-sm flex-grow-1"
+                          onClick={() => handleEdit(selected)}
+                        >
+                          <i className="bi bi-pencil me-1"></i>Edit
+                        </button>
+                        <button className="btn btn-primary btn-sm flex-grow-1">
+                          Record Payment
+                        </button>
+                      </div>
+                      <div className="mt-2">
+                        <button
+                          className="btn btn-outline-danger btn-sm w-100"
+                          onClick={() => setDeleteConfirm(selected)}
+                        >
+                          <i className="bi bi-trash me-1"></i>Delete Client
+                        </button>
                       </div>
                     </div>
                   )}
 
+                  {/* Payments Tab */}
                   {activeTab === "payments" && (
                     <div>
                       <p className="small text-muted mb-2">Transaction history</p>
+                      {selected.invoices.length === 0 && (
+                        <p className="text-muted small text-center py-3">No invoices yet.</p>
+                      )}
                       {selected.invoices.map((invoice) => (
-                        <div key={invoice.id} className="bg-light rounded p-2 mb-2 d-flex justify-content-between align-items-center">
+                        <div
+                          key={invoice.id}
+                          className="bg-light rounded p-2 mb-2 d-flex justify-content-between align-items-center"
+                        >
                           <div>
                             <p className="mb-0 small fw-semibold">{invoice.id}</p>
                             <p className="small text-muted mb-0">{invoice.date} · {invoice.type}</p>
                           </div>
                           <div className="text-end">
-                            <p className={`mb-0 small fw-semibold ${invoice.status === 'paid' ? 'text-success' : 'text-danger'}`}>
+                            <p
+                              className={`mb-0 small fw-semibold ${invoice.status === 'paid' ? 'text-success' : 'text-danger'}`}
+                            >
                               {invoice.status === 'paid' ? '+' : ''}INR {invoice.amount.toLocaleString()}
                             </p>
-                            <span className={`badge ${getInvoiceStatusBadge(invoice.status)} bg-opacity-10 text-${getInvoiceStatusBadge(invoice.status).replace('bg-', '')}`}>
+                            <span
+                              className={`badge ${getInvoiceStatusBadge(invoice.status)} bg-opacity-10 text-${getInvoiceStatusBadge(invoice.status).replace('bg-', '')}`}
+                            >
                               {invoice.status}
                             </span>
                           </div>
@@ -677,22 +818,32 @@ export default function Clients() {
                     </div>
                   )}
 
+                  {/* Projects Tab */}
                   {activeTab === "projects" && (
                     <div>
                       <p className="small text-muted mb-2">Linked projects</p>
+                      {selected.projects.length === 0 && (
+                        <p className="text-muted small text-center py-3">No projects linked.</p>
+                      )}
                       {selected.projects.map((project, idx) => (
-                        <div key={idx} className="bg-light rounded p-2 mb-2 d-flex justify-content-between align-items-center">
+                        <div
+                          key={idx}
+                          className="bg-light rounded p-2 mb-2 d-flex justify-content-between align-items-center"
+                        >
                           <div>
                             <p className="mb-0 small fw-semibold">{project.name}</p>
                             <p className="small text-muted mb-0">{project.detail}</p>
                           </div>
-                          <span className={`badge ${getProjectStatusBadge(project.status)} bg-opacity-10 text-${getProjectStatusBadge(project.status).replace('bg-', '')}`}>
+                          <span
+                            className={`badge ${getProjectStatusBadge(project.status)} bg-opacity-10 text-${getProjectStatusBadge(project.status).replace('bg-', '')}`}
+                          >
                             {project.status === "completed" ? "Completed" : "In progress"}
                           </span>
                         </div>
                       ))}
                     </div>
                   )}
+
                 </div>
               </div>
             </div>
@@ -713,15 +864,12 @@ export default function Clients() {
             </div>
           </div>
         </div>
+
       </div>
 
       <style jsx>{`
-        .cursor-pointer {
-          cursor: pointer;
-        }
-        .transition-hover {
-          transition: background-color 0.2s;
-        }
+        .cursor-pointer { cursor: pointer; }
+        .transition-hover { transition: background-color 0.2s; }
       `}</style>
     </div>
   );
