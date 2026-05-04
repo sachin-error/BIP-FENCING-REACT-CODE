@@ -284,7 +284,7 @@ export default function OT() {
                 </div>
                 <div className="col-md-3">
                   <label className="form-label">Approved By</label>
-                  <input className="form-control"  type="password"name="approvedBy"  value={form.approvedBy} onChange={handleChange} placeholder="Manager name" />
+                  <input className="form-control" name="approvedBy" value={form.approvedBy} onChange={handleChange} placeholder="Manager name" />
                 </div>
                 <div className="col-md-3">
                   <label className="form-label">Status</label>
