@@ -139,7 +139,7 @@ export default function Dashboard() {
       quotations: JSON.parse(localStorage.getItem("quotes")) || [],
       employees: JSON.parse(localStorage.getItem("employees")) || [],
       attendance: JSON.parse(localStorage.getItem("attendance")) || [],
-      clients: JSON.parse(localStorage.getItem("clients")) || [],
+      clients: JSON.parse(localStorage.getItem("bip_clients")) || [],
       products: JSON.parse(localStorage.getItem("products")) || [],
     });
   }, []);
