@@ -119,7 +119,7 @@
 // }
 
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 export default function Dashboard() {
   const [data, setData] = useState({
@@ -132,36 +132,58 @@ export default function Dashboard() {
     products: [],
   });
 
-  useEffect(() => {
+  // ✅ useCallback prevents re-creation on every render
+  const loadData = useCallback(() => {
     setData({
       invoices: JSON.parse(localStorage.getItem("invoices")) || [],
       purchases: JSON.parse(localStorage.getItem("purchaseBills")) || [],
       quotations: JSON.parse(localStorage.getItem("quotes")) || [],
       employees: JSON.parse(localStorage.getItem("employees")) || [],
-      attendance: JSON.parse(localStorage.getItem("attendance")) || [],
+      attendance: JSON.parse(localStorage.getItem("bip_attendance_records")) || [],
       clients: JSON.parse(localStorage.getItem("clients")) || [],
       products: JSON.parse(localStorage.getItem("products")) || [],
     });
   }, []);
+
+  useEffect(() => {
+  loadData();
+
+  // existing event (keep this)
+  window.addEventListener("attendance-updated", loadData);
+
+  // ✅ ADD THIS (important)
+  window.addEventListener("storage", loadData);
+
+  return () => {
+    window.removeEventListener("attendance-updated", loadData);
+
+    // ✅ cleanup
+    window.removeEventListener("storage", loadData);
+  };
+}, [loadData]);
 
   // 🔢 CALCULATIONS
   const totalRevenue = data.invoices.reduce((s, i) => s + (i.total || 0), 0);
   const totalExpense = data.purchases.reduce((s, p) => s + (p.grandTotal || 0), 0);
   const profit = totalRevenue - totalExpense;
 
-  const present = data.attendance.filter(a => a.status === "Present").length;
-  const absent = data.attendance.filter(a => a.status === "Absent").length;
+  const todayStr = new Date().toISOString().split("T")[0];
+  const present = data.attendance.filter(
+    (a) => a.status === "Present" && a.date === todayStr
+  ).length;
+  const absent = data.attendance.filter(
+    (a) => a.status === "Absent" && a.date === todayStr
+  ).length;
 
-  const lowStock = data.products.filter(p => (p.stock || 0) < 10);
+  const lowStock = data.products.filter((p) => (p.stock || 0) < 10);
 
-  // 🔷 STAT CARDS (UPDATED)
   const statCards = [
-    { label: 'Total Revenue', value: totalRevenue.toFixed(2), icon: 'bi-currency-rupee', color: 'card-green', unit: '₹ ' },
-    { label: 'Purchase Expense', value: totalExpense.toFixed(2), icon: 'bi-credit-card', color: 'card-red', unit: '₹ ' },
-    { label: 'Profit', value: profit.toFixed(2), icon: 'bi-graph-up', color: 'card-blue', unit: '₹ ' },
-    { label: 'Employees', value: data.employees.length, icon: 'bi-people', color: 'card-orange' },
-    { label: 'Present Today', value: present, icon: 'bi-check-circle', color: 'card-green' },
-    { label: 'Clients', value: data.clients.length, icon: 'bi-person-lines-fill', color: 'card-blue' },
+    { label: "Total Revenue", value: totalRevenue.toFixed(2), icon: "bi-currency-rupee", color: "card-green", unit: "₹ " },
+    { label: "Purchase Expense", value: totalExpense.toFixed(2), icon: "bi-credit-card", color: "card-red", unit: "₹ " },
+    { label: "Profit", value: profit.toFixed(2), icon: "bi-graph-up", color: "card-blue", unit: "₹ " },
+    { label: "Employees", value: data.employees.length, icon: "bi-people", color: "card-orange" },
+    { label: "Present Today", value: present, icon: "bi-check-circle", color: "card-green" },
+    { label: "Clients", value: data.clients.length, icon: "bi-person-lines-fill", color: "card-blue" },
   ];
 
   return (
@@ -188,7 +210,7 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* 📊 SIMPLE GRAPH (USING YOUR STYLE) */}
+      {/* 📊 GRAPH */}
       <div className="row g-3 mb-4">
         <div className="col-12">
           <div className="chart-placeholder shadow-sm">
@@ -196,13 +218,11 @@ export default function Dashboard() {
               <i className="bi bi-bar-chart-fill me-2"></i>
               Revenue vs Expense
             </h6>
-
             <div style={{ display: "flex", gap: 20, marginTop: 20 }}>
               <div>
                 <p style={{ fontSize: 12 }}>Revenue</p>
                 <div style={{ height: totalRevenue / 50, width: 40, background: "#1a7f37" }}></div>
               </div>
-
               <div>
                 <p style={{ fontSize: 12 }}>Expense</p>
                 <div style={{ height: totalExpense / 50, width: 40, background: "#cf222e" }}></div>
@@ -214,7 +234,6 @@ export default function Dashboard() {
 
       {/* 📋 RECENT ACTIVITY */}
       <div className="row g-3">
-
         <div className="col-md-4">
           <div className="target-card shadow-sm p-3">
             <h6>Recent Invoices</h6>
@@ -223,7 +242,6 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
-
         <div className="col-md-4">
           <div className="target-card shadow-sm p-3">
             <h6>Recent Purchase Bills</h6>
@@ -232,7 +250,6 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
-
         <div className="col-md-4">
           <div className="target-card shadow-sm p-3">
             <h6>Recent Quotations</h6>
@@ -241,12 +258,10 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
-
       </div>
 
       {/* 🧑‍💼 EMPLOYEE + STOCK */}
       <div className="row g-3 mt-2">
-
         <div className="col-md-6">
           <div className="target-card shadow-sm p-3">
             <h6>Employee Status</h6>
@@ -254,7 +269,6 @@ export default function Dashboard() {
             <p>Absent: {absent}</p>
           </div>
         </div>
-
         <div className="col-md-6">
           <div className="target-card shadow-sm p-3">
             <h6>Low Stock Alert</h6>
@@ -264,7 +278,6 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
-
       </div>
     </>
   );
