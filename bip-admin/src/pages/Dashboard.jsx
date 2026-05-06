@@ -87,17 +87,93 @@ const absent = todayAttendance.filter(
       </div>
 
       {/* 🔥 SUMMARY CARDS */}
-      <div className="row g-3 mb-4">
-        {statCards.map((card, i) => (
-          <div className="col-xl-2 col-md-4 col-6" key={i}>
-            <div className={`stat-card shadow-sm ${card.color}`}>
-              <div className="stat-icon"><i className={`bi ${card.icon}`}></i></div>
-              <div className="stat-label">{card.label}</div>
-              <div className="stat-value">{card.unit || ""}{card.value}</div>
-            </div>
+      {/* 🔥 SUMMARY CARDS */}
+<div className="row g-4 mb-4">
+
+  {statCards.map((card, i) => {
+
+    const gradients = {
+      "card-green": "linear-gradient(135deg, #1f9d45, #24923f)",
+      "card-red": "linear-gradient(135deg, #d91f26, #ef2d2d)",
+      "card-blue": "linear-gradient(135deg, #2f7de1, #4a9df8)",
+      "card-orange": "linear-gradient(135deg, #e45b05, #ff6a00)",
+    };
+
+    return (
+      <div className="col-xl-2 col-lg-4 col-md-4 col-6" key={i}>
+
+        <div
+          style={{
+            background: gradients[card.color],
+            borderRadius: 16,
+            padding: "22px",
+            height: 210,
+            color: "#fff",
+            position: "relative",
+            overflow: "hidden",
+            boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+          }}
+        >
+
+          {/* ICON */}
+          <div>
+            <i
+              className={`bi ${card.icon}`}
+              style={{
+                fontSize: 26,
+                color: "#fff",
+              }}
+            ></i>
           </div>
-        ))}
+
+          {/* TEXT CONTENT */}
+          <div>
+
+            {/* LABEL */}
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                opacity: 0.92,
+                marginBottom: 12,
+                lineHeight: 1.5,
+              }}
+            >
+              {card.label}
+            </div>
+
+            {/* VALUE */}
+            {/* VALUE */}
+<div
+  style={{
+    fontSize: 26,
+    fontWeight: 800,
+    lineHeight: 1.25,
+    color: "#fff",
+    wordBreak: "break-word",
+    overflowWrap: "break-word",
+    whiteSpace: "normal",
+    maxWidth: "100%",
+    fontFamily: "'JetBrains Mono', monospace",
+  }}
+>
+              {card.unit || ""}
+              {card.value}
+            </div>
+
+          </div>
+
+        </div>
+
       </div>
+    );
+  })}
+
+</div>
 
       {/* 📊 SIMPLE GRAPH */}
       <div className="row g-3 mb-4">
