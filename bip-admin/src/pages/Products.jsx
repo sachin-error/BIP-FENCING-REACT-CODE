@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const categories = ['Fencing', 'Gate', 'Hardware', 'Pipe', 'Wire', 'Panel', 'Post', 'Other'];
 
@@ -11,6 +11,19 @@ export default function Products() {
   const [form, setForm]           = useState(emptyForm);
   const [products, setProducts]   = useState([]);
   const [editingId, setEditingId] = useState(null);
+
+  // ── Load from localStorage on mount ──
+  useEffect(() => {
+    const saved = localStorage.getItem('products');
+    if (saved) {
+      try { setProducts(JSON.parse(saved)); } catch (_) {}
+    }
+  }, []);
+
+  // ── Save to localStorage whenever products change ──
+  useEffect(() => {
+    localStorage.setItem('products', JSON.stringify(products));
+  }, [products]);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
