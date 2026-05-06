@@ -71,6 +71,15 @@ const formatDate = (d) => {
 
 const emptyProduct = () => ({ desc: "", hsn: "", qty: "", rateIncl: "", per: "NOS" });
 
+const COLORS = ["primary", "success", "warning", "info", "danger", "secondary"];
+const getInitials = (name) =>
+  (name || "?")
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+
 // ─── PRINT STYLES ────────────────────────────────────────────────────────────
 const printStyles = `
 @media print {
@@ -107,9 +116,81 @@ const sectionHead = {
   paddingBottom: 2,
 };
 
+// ─── SYNC CLIENT TO localStorage ────────────────────────────────────────────
+function syncClientFromInvoice({ buyerName, buyerPhone, buyerAddress, buyerGst, buyerState, buyerStateCode, invoiceNo, invoiceDate, netAmount }) {
+  try {
+    const clients = JSON.parse(localStorage.getItem("bip_clients") || "[]");
+
+    // Find existing client by name (case-insensitive)
+    const existingIdx = clients.findIndex(
+      (c) => c.name.toLowerCase() === buyerName.toLowerCase()
+    );
+
+    const newInvoiceEntry = {
+      id: invoiceNo,
+      date: formatDate(invoiceDate),
+      type: "Invoice",
+      amount: Math.round(netAmount),
+      status: "pending",
+    };
+
+    if (existingIdx !== -1) {
+      // Update existing client — append invoice, update contract/pending values
+      const client = clients[existingIdx];
+      const alreadyHas = client.invoices?.some((inv) => inv.id === invoiceNo);
+      if (!alreadyHas) {
+        client.invoices = [...(client.invoices || []), newInvoiceEntry];
+        client.contractValue = (client.contractValue || 0) + Math.round(netAmount);
+        client.pending = (client.pending || 0) + Math.round(netAmount);
+        client.status = client.paid >= client.contractValue ? "paid" : client.pending > 0 ? "partial" : "paid";
+      }
+      clients[existingIdx] = client;
+    } else {
+      // Create new client entry
+      const newClient = {
+        id: Date.now(),
+        initials: getInitials(buyerName),
+        name: buyerName,
+        phone: buyerPhone || "",
+        email: "",
+        address: buyerAddress || "",
+        gst: buyerGst || "",
+        company: "",
+        type: "Commercial",
+        contractValue: Math.round(netAmount),
+        paid: 0,
+        pending: Math.round(netAmount),
+        status: "partial",
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        since: new Date().toLocaleString("en-US", { month: "short", year: "numeric" }),
+        buyerState: buyerState || "Tamil Nadu",
+        buyerStateCode: buyerStateCode || "33",
+        invoices: [newInvoiceEntry],
+        projects: [],
+      };
+      clients.push(newClient);
+    }
+
+    localStorage.setItem("bip_clients", JSON.stringify(clients));
+
+    // Also store in "invoices" key for Dashboard
+    const invoices = JSON.parse(localStorage.getItem("invoices") || "[]");
+    const filtered = invoices.filter((i) => i.invoiceNo !== invoiceNo);
+    localStorage.setItem(
+      "invoices",
+      JSON.stringify([
+        ...filtered,
+        { invoiceNo, date: invoiceDate, buyerName, total: Math.round(netAmount) },
+      ])
+    );
+  } catch (err) {
+    console.error("Error syncing client:", err);
+  }
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 export default function TaxInvoice() {
-  const [step, setStep] = useState(1); // 1 = form, 2 = preview
+  const [step, setStep] = useState(1);
 
   const [form, setForm] = useState({
     copyType: "ORIGINAL FOR RECIPIENT",
@@ -125,24 +206,19 @@ export default function TaxInvoice() {
     billOfLading: "",
     motorVehicleNo: "",
     paymentMode: "Credit",
-    // Consignee
     consigneeName: "",
     consigneeAddress: "",
     consigneeState: "Tamil Nadu",
     consigneeStateCode: "33",
-    // Buyer
     buyerName: "",
     buyerAddress: "",
     buyerPhone: "",
     buyerGst: "",
     buyerState: "Tamil Nadu",
     buyerStateCode: "33",
-    // Balance
     openBalance: "",
     closingBalance: "",
-    // GST
     gstRate: 18,
-    // Bank
     bankHolderName: DEFAULT_BANK.holderName,
     bankName: DEFAULT_BANK.bankName,
     bankAccountNo: DEFAULT_BANK.accountNo,
@@ -153,7 +229,6 @@ export default function TaxInvoice() {
   const [products, setProducts] = useState([emptyProduct()]);
   const [errors, setErrors] = useState({});
 
-  // ── form handlers ──────────────────────────────────────────────────────────
   const handleForm = (e) => {
     const { name, value } = e.target;
     setForm((p) => ({ ...p, [name]: value }));
@@ -174,7 +249,6 @@ export default function TaxInvoice() {
     setProducts((p) => p.filter((_, i) => i !== idx));
   };
 
-  // ── validation ─────────────────────────────────────────────────────────────
   const validate = () => {
     const e = {};
     if (!form.invoiceNo.trim()) e.invoiceNo = "Required";
@@ -188,7 +262,6 @@ export default function TaxInvoice() {
     return e;
   };
 
-  // ── CALCULATIONS ────────────────────────────────────────────────────────────
   const gstRate = parseFloat(form.gstRate) || 18;
   const cgstRate = gstRate / 2;
   const sgstRate = gstRate / 2;
@@ -210,34 +283,30 @@ export default function TaxInvoice() {
   const roundOff = Math.round(gross) - gross;
   const netAmount = gross + roundOff;
 
-  // Group by HSN for tax table
   const hsnGroups = {};
   rows.forEach((r) => {
     const key = r.hsn || "–";
     if (!hsnGroups[key]) hsnGroups[key] = { taxableValue: 0, cgst: 0, sgst: 0 };
-    const cg = r.taxableAmt * (cgstRate / 100);
-    const sg = r.taxableAmt * (sgstRate / 100);
     hsnGroups[key].taxableValue += r.taxableAmt;
-    hsnGroups[key].cgst += cg;
-    hsnGroups[key].sgst += sg;
+    hsnGroups[key].cgst += r.taxableAmt * (cgstRate / 100);
+    hsnGroups[key].sgst += r.taxableAmt * (sgstRate / 100);
   });
 
-  // ── ✅ FIXED: handlePreview — saves invoice to localStorage for Dashboard ──
   const handlePreview = () => {
     const e = validate();
     if (Object.keys(e).length) { setErrors(e); return; }
 
-    // Save to localStorage so Dashboard.jsx can read it
-    const existing = JSON.parse(localStorage.getItem("invoices") || "[]");
-    const newInvoice = {
-      invoiceNo: form.invoiceNo,
-      date: form.invoiceDate,
+    syncClientFromInvoice({
       buyerName: form.buyerName,
-      total: netAmount,
-    };
-    // Avoid duplicates — overwrite if same invoiceNo
-    const filtered = existing.filter(i => i.invoiceNo !== form.invoiceNo);
-    localStorage.setItem("invoices", JSON.stringify([...filtered, newInvoice]));
+      buyerPhone: form.buyerPhone,
+      buyerAddress: form.buyerAddress,
+      buyerGst: form.buyerGst,
+      buyerState: form.buyerState,
+      buyerStateCode: form.buyerStateCode,
+      invoiceNo: form.invoiceNo,
+      invoiceDate: form.invoiceDate,
+      netAmount,
+    });
 
     setStep(2);
     window.scrollTo(0, 0);
@@ -345,7 +414,7 @@ export default function TaxInvoice() {
                 </div>
                 <div className="col-md-3">
                   <label className="form-label fw-semibold" style={{ fontSize: 12 }}>Phone</label>
-                  <input className="form-control form-control-sm" name="buyerPhone" value={form.buyerPhone} onChange={handleForm} />
+                  <input className="form-control form-control-sm" name="buyerPhone" value={form.buyerPhone} onChange={handleForm} placeholder="e.g. 9342542897" />
                 </div>
                 <div className="col-md-3">
                   <label className="form-label fw-semibold" style={{ fontSize: 12 }}>GST No</label>
@@ -485,17 +554,25 @@ export default function TaxInvoice() {
     <>
       <style>{printStyles}</style>
 
-      {/* Action Bar */}
-      <div className="no-print py-3 d-flex justify-content-center gap-3">
+      <div className="no-print py-3 d-flex justify-content-center gap-3 align-items-center">
         <button className="btn btn-outline-secondary px-4" onClick={() => setStep(1)}>✏️ Edit</button>
         <button className="btn text-white px-4" style={{ background: "#1a1a2e" }} onClick={() => window.print()}>
           🖨️ Confirm &amp; Print
         </button>
+        {form.buyerPhone && (
+          <a
+            className="btn btn-success px-4"
+            href={`https://wa.me/91${form.buyerPhone.replace(/\D/g, "")}?text=${encodeURIComponent(
+              `Dear ${form.buyerName},\n\nPlease find your Tax Invoice *${form.invoiceNo}* dated ${formatDate(form.invoiceDate)} for ₹${fmt2(netAmount)} from BIP Fencing Contract Work.\n\nGSTIN: ${COMPANY.gst}\nPh: ${COMPANY.phone}\n\nThank you for your business!`
+            )}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            📤 Send to Client via WhatsApp
+          </a>
+        )}
       </div>
 
-      {/* ═══════════════════════════════════
-          PRINTABLE INVOICE
-      ═══════════════════════════════════ */}
       <div
         id="bip-invoice-print"
         style={{
@@ -555,9 +632,7 @@ export default function TaxInvoice() {
             <tr>
               <td style={{ width: "52%", borderRight: "1px solid #000", padding: "5px 8px", verticalAlign: "top" }}>
                 <div style={sectionHead}>Consignee (Ship to)</div>
-                <div style={{ fontWeight: "bold", fontSize: 13 }}>
-                  {form.consigneeName || form.buyerName}
-                </div>
+                <div style={{ fontWeight: "bold", fontSize: 13 }}>{form.consigneeName || form.buyerName}</div>
                 <div style={{ fontSize: 12 }}>{form.consigneeAddress || form.buyerAddress}</div>
                 <div style={{ fontSize: 12 }}>
                   State Name: {form.consigneeState || form.buyerState},
@@ -603,9 +678,7 @@ export default function TaxInvoice() {
                 <div style={{ fontSize: 12 }}>{form.buyerAddress}</div>
                 {form.buyerPhone && <div style={{ fontSize: 12 }}>Ph: {form.buyerPhone}</div>}
                 {form.buyerGst && <div style={{ fontSize: 12 }}>GSTIN/UIN: {form.buyerGst}</div>}
-                <div style={{ fontSize: 12 }}>
-                  State Name: {form.buyerState}, Code: {form.buyerStateCode}
-                </div>
+                <div style={{ fontSize: 12 }}>State Name: {form.buyerState}, Code: {form.buyerStateCode}</div>
               </td>
               <td style={{ padding: "5px 8px", verticalAlign: "top" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
@@ -795,11 +868,23 @@ export default function TaxInvoice() {
         </table>
       </div>
 
-      <div className="no-print d-flex justify-content-center gap-3 pb-4">
+      <div className="no-print d-flex justify-content-center gap-3 pb-4 flex-wrap">
         <button className="btn btn-outline-secondary px-4" onClick={() => setStep(1)}>✏️ Edit</button>
         <button className="btn text-white px-4" style={{ background: "#1a1a2e" }} onClick={() => window.print()}>
           🖨️ Confirm &amp; Print
         </button>
+        {form.buyerPhone && (
+          <a
+            className="btn btn-success px-4"
+            href={`https://wa.me/91${form.buyerPhone.replace(/\D/g, "")}?text=${encodeURIComponent(
+              `Dear ${form.buyerName},\n\nPlease find your Tax Invoice *${form.invoiceNo}* dated ${formatDate(form.invoiceDate)} for ₹${fmt2(netAmount)} from BIP Fencing Contract Work.\n\nGSTIN: ${COMPANY.gst}\nPh: ${COMPANY.phone}\n\nThank you for your business!`
+            )}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            📤 Send to Client via WhatsApp
+          </a>
+        )}
       </div>
     </>
   );
