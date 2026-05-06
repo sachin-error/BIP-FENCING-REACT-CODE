@@ -220,30 +220,17 @@ export default function Attendance() {
     setTimeout(() => setSubmitted(false), 3000);
     setForm(emptyForm);
     setShowForm(false);
-<<<<<<< HEAD
-  };
-
-  const handleEdit = (rec) => {
-    setForm({ ...rec });
-    setEditingId(rec.id);
-    setShowForm(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-=======
 
     // ✅ Tell Dashboard to refresh
     window.dispatchEvent(new Event("attendance-updated"));
->>>>>>> origin/sachinbranch1
   };
 
   const handleDelete = (id) => {
     setRecords(prev => prev.filter(r => r.id !== id));
     setDeleteConfirm(null);
-<<<<<<< HEAD
-=======
 
     // ✅ Tell Dashboard to refresh
     window.dispatchEvent(new Event("attendance-updated"));
->>>>>>> origin/sachinbranch1
   };
 
   const closeForm = () => { setShowForm(false); setEditingId(null); setForm(emptyForm); };

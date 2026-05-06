@@ -964,12 +964,8 @@ export default function PurchaseInventory() {
                   </div>
                   <div>
                     <label style={S.label}>Supplier</label>
-<<<<<<< HEAD
-                    <input style={S.input} name="supplier" value={form.supplier} onChange={handleChange} placeholder="Supplier name" list="supplier-list" />
-=======
                     <input style={S.input} name="supplier"  type="" value={form.supplier} onChange={handleChange} placeholder="Supplier name" list="supplier-list" 
                     onInput={(e) => e.target.value = e.target.value.replace(/[^A-Za-z ]/g, "")} />
->>>>>>> origin/sachinbranch1
                     <datalist id="supplier-list">
                       <option value="Al Faris Trading" /><option value="Gulf Steel Co" /><option value="Emirates Hardware" /><option value="Dubai Metals LLC" />
                     </datalist>
