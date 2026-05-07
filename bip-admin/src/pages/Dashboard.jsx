@@ -51,12 +51,20 @@ const DEPARTMENTS = [
   'Logistics', 'Administration', 'Site Supervision', 'Other',
 ];
 
-// Fixed max pixel height for bars — no matter how large the value
-const MAX_BAR_PX = 160;
+const MAX_BAR_PX = 140;
 
 function scaleBar(value, maxValue) {
   if (!maxValue || maxValue === 0) return 4;
   return Math.max(4, (value / maxValue) * MAX_BAR_PX);
+}
+
+// Shorten large rupee values for mobile labels: ₹19,56,536 → ₹19.6L
+function shortInr(v) {
+  const n = Number(v) || 0;
+  if (n >= 10000000) return `₹${(n / 10000000).toFixed(1)}Cr`;
+  if (n >= 100000)   return `₹${(n / 100000).toFixed(1)}L`;
+  if (n >= 1000)     return `₹${(n / 1000).toFixed(1)}K`;
+  return `₹${n.toFixed(0)}`;
 }
 
 export default function Dashboard() {
@@ -89,20 +97,17 @@ export default function Dashboard() {
       products:   JSON.parse(localStorage.getItem("products"))              || [],
       otRecords:  JSON.parse(localStorage.getItem("bip_ot_records"))        || [],
     });
-
     const saved = localStorage.getItem("quotes_summary");
-    if (saved) {
-      try { setQuoteSummary(JSON.parse(saved)); } catch (_) {}
-    }
+    if (saved) { try { setQuoteSummary(JSON.parse(saved)); } catch (_) {} }
   }, []);
 
-  // ── Financial ────────────────────────────────────────────────────────────
+  // ── Financial ─────────────────────────────────────────────────────────────
   const totalRevenue = data.invoices.reduce((s, i) => s + (i.total || 0), 0);
   const totalExpense = data.purchases.reduce((s, p) => s + (p.grandTotal || 0), 0);
   const profit       = totalRevenue - totalExpense;
   const chartMax     = Math.max(totalRevenue, totalExpense, 1);
 
-  // ── Attendance ───────────────────────────────────────────────────────────
+  // ── Attendance ────────────────────────────────────────────────────────────
   const today           = new Date().toISOString().split("T")[0];
   const todayAttendance = data.attendance.filter(a => a.date === today);
   const uniqueEmployees = [...new Set(data.attendance.map(a => a.employeeId || a.employeeName))];
@@ -110,13 +115,11 @@ export default function Dashboard() {
   const present         = todayAttendance.filter(a => a.status === "Present").length;
   const absent          = todayAttendance.filter(a => a.status === "Absent").length;
 
-  // ── OT Stats ─────────────────────────────────────────────────────────────
+  // ── OT ────────────────────────────────────────────────────────────────────
   const activeOT  = data.otRecords.filter(r => r.status === 'Approved' || r.status === 'Pending');
   const totalOnOT = new Set(activeOT.map(r => r.employeeId || r.employeeName)).size;
-
-  const otByDept = DEPARTMENTS.map(dept => {
-    const deptRecords = activeOT.filter(r => r.department === dept);
-    const empCount    = new Set(deptRecords.map(r => r.employeeId || r.employeeName)).size;
+  const otByDept  = DEPARTMENTS.map(dept => {
+    const empCount = new Set(activeOT.filter(r => r.department === dept).map(r => r.employeeId || r.employeeName)).size;
     return { dept, count: empCount };
   }).filter(d => d.count > 0);
 
@@ -134,9 +137,12 @@ export default function Dashboard() {
   ];
 
   const bars = [
-    { label: 'Revenue', value: totalRevenue, color1: '#2da44e', color2: '#1a7f37', textColor: '#1a7f37' },
-    { label: 'Expense', value: totalExpense, color1: '#f85149', color2: '#cf222e', textColor: '#cf222e' },
-    { label: 'Profit',  value: Math.abs(profit), color1: profit >= 0 ? '#54aeff' : '#f85149', color2: profit >= 0 ? '#0969da' : '#cf222e', textColor: profit >= 0 ? '#0969da' : '#cf222e' },
+    { label: 'Revenue', value: totalRevenue,       color1: '#2da44e', color2: '#1a7f37', textColor: '#1a7f37' },
+    { label: 'Expense', value: totalExpense,       color1: '#f85149', color2: '#cf222e', textColor: '#cf222e' },
+    { label: 'Profit',  value: Math.abs(profit),
+      color1: profit >= 0 ? '#54aeff' : '#f85149',
+      color2: profit >= 0 ? '#0969da' : '#cf222e',
+      textColor: profit >= 0 ? '#0969da' : '#cf222e' },
   ];
 
   return (
@@ -172,50 +178,122 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* ── Revenue vs Expense Chart ── */}
+      {/* ── Revenue vs Expense Chart — mobile-safe ── */}
       <div className="row g-3 mb-4">
         <div className="col-12">
-          <div className="chart-placeholder shadow-sm" style={{ padding: '16px 20px 12px' }}>
-            <h6 style={{ fontWeight: 700, marginBottom: 20 }}>
+          <div className="chart-placeholder shadow-sm" style={{ padding: '16px 16px 12px', boxSizing: 'border-box', overflow: 'hidden' }}>
+            <h6 style={{ fontWeight: 700, marginBottom: 16 }}>
               <i className="bi bi-bar-chart-fill me-2"></i>Revenue vs Expense
             </h6>
 
+            {/*
+              KEY FIX:
+              - width: 100% + overflow: hidden → chart never wider than card
+              - bars use flex: 1 so they share space equally regardless of screen width
+              - value labels use shortInr() so they don't overflow on narrow screens
+              - the whole chart is a flex column with a fixed height
+            */}
             <div style={{
-              display: 'flex',
-              alignItems: 'flex-end',
-              gap: 40,
-              height: MAX_BAR_PX + 50,
-              paddingBottom: 0,
-              position: 'relative',
+              width: '100%',
+              overflow: 'hidden',
+              boxSizing: 'border-box',
             }}>
-              {bars.map(bar => (
-                <div key={bar.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                  {/* Value label above bar */}
-                  <span style={{ fontSize: 11, fontWeight: 700, color: bar.textColor, whiteSpace: 'nowrap' }}>
-                    {inr(bar.value)}
-                  </span>
-                  {/* Bar */}
-                  <div style={{
-                    width: 52,
-                    height: scaleBar(bar.value, chartMax),
-                    background: `linear-gradient(180deg, ${bar.color1} 0%, ${bar.color2} 100%)`,
-                    borderRadius: '5px 5px 0 0',
-                    transition: 'height 0.5s ease',
-                  }} />
-                  {/* Label below */}
-                  <span style={{ fontSize: 12, color: '#57606a', fontWeight: 600 }}>{bar.label}</span>
-                </div>
-              ))}
-
-              {/* Baseline rule */}
+              {/* Bar area */}
               <div style={{
-                position: 'absolute',
-                left: 0,
-                right: 0,
-                bottom: 30,
-                height: 1,
-                background: '#e1e8ed',
-              }} />
+                display: 'flex',
+                alignItems: 'flex-end',
+                justifyContent: 'space-around',   /* ← evenly distribute, no fixed gaps */
+                width: '100%',
+                height: MAX_BAR_PX + 48,
+                position: 'relative',
+                boxSizing: 'border-box',
+              }}>
+                {/* Baseline */}
+                <div style={{
+                  position: 'absolute',
+                  left: 0, right: 0, bottom: 28,
+                  height: 1,
+                  background: '#e1e8ed',
+                  zIndex: 0,
+                }} />
+
+                {bars.map(bar => (
+                  <div
+                    key={bar.label}
+                    style={{
+                      flex: 1,                       /* ← fills equal share of width */
+                      maxWidth: 90,                  /* ← never too wide on desktop */
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 4,
+                      zIndex: 1,
+                    }}
+                  >
+                    {/* Shortened value label — no overflow on mobile */}
+                    <span style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      color: bar.textColor,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: '100%',
+                      textAlign: 'center',
+                    }}>
+                      {shortInr(bar.value)}
+                    </span>
+
+                    {/* Bar — width is % of flex cell, never overflows */}
+                    <div style={{
+                      width: '60%',                  /* ← relative to flex cell */
+                      minWidth: 18,
+                      height: scaleBar(bar.value, chartMax),
+                      background: `linear-gradient(180deg, ${bar.color1} 0%, ${bar.color2} 100%)`,
+                      borderRadius: '4px 4px 0 0',
+                      transition: 'height 0.5s ease',
+                    }} />
+
+                    {/* Label */}
+                    <span style={{
+                      fontSize: 11,
+                      color: '#57606a',
+                      fontWeight: 600,
+                      whiteSpace: 'nowrap',
+                    }}>
+                      {bar.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Full values row below chart (visible on all screens) */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-around',
+                marginTop: 4,
+                paddingTop: 8,
+                borderTop: '1px solid #f0f0f0',
+                flexWrap: 'wrap',
+                gap: 4,
+              }}>
+                {bars.map(bar => (
+                  <div key={bar.label + '_val'} style={{ textAlign: 'center', minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: 9, color: '#8c959f', fontWeight: 700, textTransform: 'uppercase' }}>{bar.label}</div>
+                    <div style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: bar.textColor,
+                      fontFamily: 'monospace',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}>
+                      {inr(bar.value)}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -232,7 +310,6 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
-
         <div className="col-md-4">
           <div className="target-card shadow-sm p-3">
             <h6>Recent Purchase Bills</h6>
@@ -242,7 +319,6 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
-
         <div className="col-md-4">
           <div className="target-card shadow-sm p-3">
             <h6>Recent Quotations</h6>
@@ -268,8 +344,7 @@ export default function Dashboard() {
             {data.quotations.length === 0 && <p style={{ color: "#aaa", fontSize: 13 }}>No quotations yet</p>}
             {data.quotations.slice(-3).map((q, idx) => (
               <p key={idx} style={{ marginBottom: 4, fontSize: 13 }}>
-                <span style={{ fontWeight: 600, color: '#bc4c00' }}>{q.quoteNo}</span>
-                {' - '}
+                <span style={{ fontWeight: 600, color: '#bc4c00' }}>{q.quoteNo}</span>{' - '}
                 <span style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 600 }}>{inr(q.total)}</span>
                 {q.clientName && <span style={{ color: '#8c959f', fontSize: 11.5 }}> · {q.clientName}</span>}
               </p>
@@ -280,7 +355,6 @@ export default function Dashboard() {
 
       {/* Employee Status + OT + Low Stock */}
       <div className="row g-3 mt-2">
-
         <div className="col-md-4">
           <div className="target-card shadow-sm p-3" style={{ height: '100%' }}>
             <h6 style={{ fontWeight: 700, marginBottom: 12 }}>Employee Status</h6>
@@ -293,8 +367,7 @@ export default function Dashboard() {
         <div className="col-md-4">
           <div className="target-card shadow-sm p-3" style={{ height: '100%' }}>
             <h6 style={{ fontWeight: 700, marginBottom: 12 }}>
-              <i className="bi bi-clock-history me-2" style={{ color: '#bc4c00' }}></i>
-              Overtime Status
+              <i className="bi bi-clock-history me-2" style={{ color: '#bc4c00' }}></i>Overtime Status
             </h6>
             <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
               <div style={{ flex: 1, background: '#fff8f0', borderRadius: 8, padding: '6px 10px', border: '1px solid #f5d6b0' }}>
@@ -306,25 +379,22 @@ export default function Dashboard() {
                 <div style={{ fontSize: 20, fontWeight: 700, color: '#bc4c00' }}>{totalOnOT}</div>
               </div>
             </div>
-            <div style={{ fontSize: 11, color: '#8c959f', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-              By Department
-            </div>
-            {otByDept.length === 0 ? (
-              <p style={{ fontSize: 13, color: '#aaa', marginBottom: 0 }}>No active OT records</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {DEPARTMENTS.map(dept => {
-                  const entry = otByDept.find(d => d.dept === dept);
-                  if (!entry) return null;
-                  return (
-                    <div key={dept} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 13 }}>{dept}</span>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: '#bc4c00' }}>{entry.count}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            <div style={{ fontSize: 11, color: '#8c959f', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>By Department</div>
+            {otByDept.length === 0
+              ? <p style={{ fontSize: 13, color: '#aaa', marginBottom: 0 }}>No active OT records</p>
+              : <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {DEPARTMENTS.map(dept => {
+                    const entry = otByDept.find(d => d.dept === dept);
+                    if (!entry) return null;
+                    return (
+                      <div key={dept} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: 13 }}>{dept}</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: '#bc4c00' }}>{entry.count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+            }
           </div>
         </div>
 
@@ -334,14 +404,11 @@ export default function Dashboard() {
             {lowStock.length === 0
               ? <p style={{ marginBottom: 0 }}>No low stock</p>
               : lowStock.map((p, i) => (
-                  <p key={i} style={{ marginBottom: 6 }}>
-                    {p.name} - <strong style={{ color: '#cf222e' }}>{p.stock}</strong>
-                  </p>
+                  <p key={i} style={{ marginBottom: 6 }}>{p.name} - <strong style={{ color: '#cf222e' }}>{p.stock}</strong></p>
                 ))
             }
           </div>
         </div>
-
       </div>
     </>
   );
