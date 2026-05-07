@@ -114,8 +114,24 @@ export default function Dashboard() {
     return { dept, count: empCount };
   }).filter(d => d.count > 0);
 
-  // ── Stock ─────────────────────────────────────────────────────────────────
-  const lowStock = data.products.filter(p => (p.stock || 0) < 10);
+// ✅ Employee counts
+const totalEmployees = uniqueEmployees.length;
+
+const present = todayAttendance.filter(
+  a => a.status === "Present"
+).length;
+
+const absent = todayAttendance.filter(
+  a => a.status === "Absent"
+).length;
+
+  // ── LOW STOCK: uses stockQty (from Products.jsx) and minStock threshold ──
+  // A product is "low stock" if stockQty < 10 OR stockQty <= minStock (whichever fires first)
+  const lowStock = data.products.filter(p => {
+    const qty = Number(p.stockQty);
+    const min = Number(p.minStock) || 10;
+    return qty < 10 || qty <= min;
+  });
 
   // ── Stat Cards ────────────────────────────────────────────────────────────
   const statCards = [
@@ -128,23 +144,90 @@ export default function Dashboard() {
   ];
 
   return (
-    <>
+
       <div className="page-header">
         <h1>Dashboard</h1>
         <p>Welcome back! Here's your business overview.</p>
       </div>
 
-      {/* Summary Cards */}
-      <div className="row g-3 mb-4">
-        {statCards.slice(0, 3).map((card, i) => (
-          <div className="col-md-4 col-12" key={i}>
-            <div className={`shadow-sm ${card.color}`} style={statCardStyle}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={statLabelStyle}>{card.label}</div>
-                <div style={statIconStyle}><i className={`bi ${card.icon}`}></i></div>
-              </div>
-              <div style={statValueStyle}>{card.unit || ""}{card.value}</div>
+     { /* 🔥 SUMMARY CARDS */}
+<div className="row g-4 mb-4">
+
+  {statCards.map(card, i) 
+
+     const gradients = {
+      "card-green": "linear-gradient(135deg, #1f9d45, #24923f)",
+      "card-red": "linear-gradient(135deg, #d91f26, #ef2d2d)",
+      "card-blue": "linear-gradient(135deg, #2f7de1, #4a9df8)",
+      "card-orange": "linear-gradient(135deg, #e45b05, #ff6a00)",
+    };
+
+    return 
+      <div className="col-xl-2 col-lg-4 col-md-4 col-6" key={i}>
+
+        <div>
+          style={{
+            background: gradients[card.color],
+            borderRadius: 16,
+            padding: "22px",
+            height: 210,
+            color: "#fff",
+            position: "relative",
+            overflow: "hidden",
+            boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+          }}
+        </div>
+
+
+          {/* ICON */}
+          <div>
+            <i
+              className={`bi ${card.icon}`}
+              style={{
+                fontSize: 26,
+                color: "#fff",
+              }}
+            ></i>
+          </div>
+
+          {/* TEXT CONTENT */}
+          <div>
+
+            {/* LABEL */}
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                opacity: 0.92,
+                marginBottom: 12,
+                lineHeight: 1.5,
+              }}
+            >
+              {card.label}
             </div>
+
+            {/* VALUE */}
+<div
+  style={{
+    fontSize: 26,
+    fontWeight: 800,
+    lineHeight: 1.25,
+    color: "#fff",
+    wordBreak: "break-word",
+    overflowWrap: "break-word",
+    whiteSpace: "normal",
+    maxWidth: "100%",
+    fontFamily: "'JetBrains Mono', monospace",
+  }}
+>
+              {card.unit || ""}
+              {card.value}
+            </div>
+
           </div>
         ))}
         {statCards.slice(3).map((card, i) => (
@@ -203,9 +286,11 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* ── RECENT QUOTATIONS ── */}
         <div className="col-md-4">
           <div className="target-card shadow-sm p-3">
             <h6>Recent Quotations</h6>
+
             {quoteSummary.totalQuotes > 0 && (
               <div style={{
                 display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 10px',
@@ -225,7 +310,8 @@ export default function Dashboard() {
                 ))}
               </div>
             )}
-            {data.quotations.length === 0 && <p style={{ color: "#aaa", fontSize: 13 }}>No quotations yet</p>}
+
+            {data.quotations.length === 0 && <p style={{ color:"#aaa", fontSize:13 }}>No quotations yet</p>}
             {data.quotations.slice(-3).map((q, idx) => (
               <p key={idx} style={{ marginBottom: 4, fontSize: 13 }}>
                 <span style={{ fontWeight: 600, color: '#bc4c00' }}>{q.quoteNo}</span>
@@ -251,58 +337,62 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* OT Status */}
-        <div className="col-md-4">
-          <div className="target-card shadow-sm p-3" style={{ height: '100%' }}>
-            <h6 style={{ fontWeight: 700, marginBottom: 12 }}>
-              <i className="bi bi-clock-history me-2" style={{ color: '#bc4c00' }}></i>
-              Overtime Status
-            </h6>
-
-            {/* Top summary row */}
-            <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-              <div style={{ flex: 1, background: '#fff8f0', borderRadius: 8, padding: '6px 10px', border: '1px solid #f5d6b0' }}>
-                <div style={{ fontSize: 10, color: '#8c959f', fontWeight: 700, textTransform: 'uppercase' }}>Total Employees</div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: '#24292f' }}>{totalEmployees}</div>
-              </div>
-              <div style={{ flex: 1, background: '#fff8f0', borderRadius: 8, padding: '6px 10px', border: '1px solid #f5d6b0' }}>
-                <div style={{ fontSize: 10, color: '#8c959f', fontWeight: 700, textTransform: 'uppercase' }}>On OT</div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: '#bc4c00' }}>{totalOnOT}</div>
-              </div>
-            </div>
-
-            {/* By department */}
-            <div style={{ fontSize: 11, color: '#8c959f', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-              By Department
-            </div>
-
-            {otByDept.length === 0 ? (
-              <p style={{ fontSize: 13, color: '#aaa', marginBottom: 0 }}>No active OT records</p>
+        {/* ── LOW STOCK ALERT — reads stockQty from Products.jsx ── */}
+        <div className="col-md-6">
+          <div className="target-card shadow-sm p-3">
+            <h6>⚠️ Low Stock Alert</h6>
+            {lowStock.length === 0 ? (
+              <p style={{ color: '#22c55e', fontSize: 13, fontWeight: 600 }}>
+                ✅ All products are sufficiently stocked
+              </p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {DEPARTMENTS.map(dept => {
-                  const entry = otByDept.find(d => d.dept === dept);
-                  if (!entry) return null;
+              <>
+                <p style={{ fontSize: 11, color: '#9ca3af', marginBottom: 8 }}>
+                  {lowStock.length} product{lowStock.length !== 1 ? 's' : ''} below threshold
+                </p>
+                {lowStock.map((p, i) => {
+                  const qty = Number(p.stockQty);
+                  const isOut = qty === 0;
                   return (
-                    <div key={dept} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 13 }}>{dept}</span>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: '#bc4c00' }}>{entry.count}</span>
+                    <div
+                      key={p.id || i}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '6px 10px',
+                        marginBottom: 6,
+                        borderRadius: 7,
+                        background: isOut ? '#fee2e2' : '#fef3c7',
+                        border: `1px solid ${isOut ? '#fca5a5' : '#fde68a'}`,
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 13, color: '#1f2937' }}>
+                          {p.productName}
+                        </div>
+                        {p.sku && (
+                          <div style={{ fontSize: 11, color: '#9ca3af', fontFamily: 'monospace' }}>
+                            {p.sku}
+                          </div>
+                        )}
+                      </div>
+                      <span style={{
+                        fontSize: 12,
+                        fontWeight: 700,
+                        padding: '3px 10px',
+                        borderRadius: 20,
+                        background: isOut ? '#ef4444' : '#f59e0b',
+                        color: '#fff',
+                        whiteSpace: 'nowrap',
+                      }}>
+                        {isOut ? 'Out of Stock' : `Qty: ${qty}`}
+                      </span>
                     </div>
                   );
                 })}
-              </div>
+              </>
             )}
-          </div>
-        </div>
-
-        {/* Low Stock Alert */}
-        <div className="col-md-4">
-          <div className="target-card shadow-sm p-3" style={{ height: '100%' }}>
-            <h6 style={{ fontWeight: 700, marginBottom: 12 }}>Low Stock Alert</h6>
-            {lowStock.length === 0
-              ? <p style={{ marginBottom: 0 }}>No low stock</p>
-              : lowStock.map((p, i) => <p key={i} style={{ marginBottom: 6 }}>{p.name} - <strong style={{ color: '#cf222e' }}>{p.stock}</strong></p>)
-            }
           </div>
         </div>
 
