@@ -42,17 +42,17 @@ export default function OT() {
   const [filterDept, setFilterDept]     = useState('');
   const [submitted, setSubmitted] = useState(false);
 
-  // persist
+  // persist — Dashboard reads this same key
   useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); }, [records]);
 
   const otPay = calcOTPay(form);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  // ── submit (add or update) ──
+  // ── submit ──
   const handleSubmit = (e) => {
     e.preventDefault();
-    const pay = calcOTPay(form);
+    const pay    = calcOTPay(form);
     const record = { ...form, otPay: pay, id: editingId ?? Date.now() };
 
     if (editingId) {
@@ -62,7 +62,6 @@ export default function OT() {
       setRecords(prev => [record, ...prev]);
     }
 
-    console.log('OT Record saved:', record);
     setSubmitted(true);
     setTimeout(() => setSubmitted(false), 3000);
     setForm(emptyForm);
@@ -86,17 +85,17 @@ export default function OT() {
   // ── filtered records ──
   const filtered = records.filter(r => {
     const q = search.toLowerCase();
-    const matchQ = !q || r.employeeName.toLowerCase().includes(q) || r.employeeId.toLowerCase().includes(q) || r.department.toLowerCase().includes(q);
+    const matchQ = !q || r.employeeName.toLowerCase().includes(q) || (r.employeeId || '').toLowerCase().includes(q) || (r.department || '').toLowerCase().includes(q);
     const matchS = !filterStatus || r.status === filterStatus;
     const matchD = !filterDept  || r.department === filterDept;
     return matchQ && matchS && matchD;
   });
 
   // ── summary stats ──
-  const totalOTHours = records.reduce((s, r) => s + (Number(r.otHours) || 0), 0);
-  const totalOTPay   = records.reduce((s, r) => s + (Number(r.otPay)  || 0), 0);
-  const pendingCount = records.filter(r => r.status === 'Pending').length;
-  const approvedCount= records.filter(r => r.status === 'Approved').length;
+  const totalOTHours  = records.reduce((s, r) => s + (Number(r.otHours) || 0), 0);
+  const totalOTPay    = records.reduce((s, r) => s + (Number(r.otPay)  || 0), 0);
+  const pendingCount  = records.filter(r => r.status === 'Pending').length;
+  const approvedCount = records.filter(r => r.status === 'Approved').length;
 
   const closeForm = () => { setShowForm(false); setEditingId(null); setForm(emptyForm); };
 
@@ -201,7 +200,7 @@ export default function OT() {
             )}
 
             <form onSubmit={handleSubmit}>
-              {/* Section: Employee Info */}
+              {/* Employee Info */}
               <p className="text-muted small fw-semibold mb-2 mt-1" style={{ letterSpacing: '0.05em', textTransform: 'uppercase', fontSize: 11 }}>
                 Employee Information
               </p>
@@ -231,7 +230,7 @@ export default function OT() {
                 </div>
               </div>
 
-              {/* Section: OT Details */}
+              {/* OT Details */}
               <p className="text-muted small fw-semibold mb-2" style={{ letterSpacing: '0.05em', textTransform: 'uppercase', fontSize: 11 }}>
                 OT Details
               </p>
@@ -263,7 +262,7 @@ export default function OT() {
                 </div>
               </div>
 
-              {/* Section: Pay & Approval */}
+              {/* Pay & Approval */}
               <p className="text-muted small fw-semibold mb-2" style={{ letterSpacing: '0.05em', textTransform: 'uppercase', fontSize: 11 }}>
                 Pay & Approval
               </p>
@@ -310,9 +309,7 @@ export default function OT() {
                   <i className="bi bi-arrow-counterclockwise me-2"></i>Reset
                 </button>
                 {editingId && (
-                  <button type="button" className="btn btn-outline-danger" onClick={closeForm}>
-                    Cancel Edit
-                  </button>
+                  <button type="button" className="btn btn-outline-danger" onClick={closeForm}>Cancel Edit</button>
                 )}
               </div>
             </form>
@@ -344,7 +341,9 @@ export default function OT() {
           {filtered.length === 0 ? (
             <div className="text-center py-5">
               <i className="bi bi-clock-history text-muted" style={{ fontSize: 40 }}></i>
-              <p className="text-muted mt-2 mb-0">{records.length === 0 ? 'No OT records yet. Add one above.' : 'No records match your filter.'}</p>
+              <p className="text-muted mt-2 mb-0">
+                {records.length === 0 ? 'No OT records yet. Add one above.' : 'No records match your filter.'}
+              </p>
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
@@ -389,7 +388,9 @@ export default function OT() {
                       <td className="fw-bold" style={{ color: '#bc4c00', fontFamily: 'monospace' }}>
                         INR {Number(rec.otPay || 0).toFixed(2)}
                       </td>
-                      <td style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={rec.reason}>{rec.reason}</td>
+                      <td style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={rec.reason}>
+                        {rec.reason}
+                      </td>
                       <td>{rec.approvedBy || '—'}</td>
                       <td>
                         <span className={`badge bg-${statusColor[rec.status] || 'secondary'} bg-opacity-10 text-${statusColor[rec.status] || 'secondary'}`}>
