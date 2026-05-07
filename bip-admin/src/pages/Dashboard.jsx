@@ -143,29 +143,28 @@ const absent = todayAttendance.filter(
     { label: 'Clients',          value: data.clients.length,     icon: 'bi-person-lines-fill', color: 'card-blue'               },
   ];
 
-  return (
+   return (
+   <>
+    <div className="page-header">
+      <h1>Dashboard</h1>
+      <p>Welcome back! Here's your business overview.</p>
+    </div>
 
-      <div className="page-header">
-        <h1>Dashboard</h1>
-        <p>Welcome back! Here's your business overview.</p>
-      </div>
+    {/* 🔥 SUMMARY CARDS */}
+    <div className="row g-4 mb-4"><div className="row g-4 mb-4">
+  {statCards.map((card, i) => {
 
-     { /* 🔥 SUMMARY CARDS */}
-<div className="row g-4 mb-4">
-
-  {statCards.map(card, i) 
-
-     const gradients = {
+    const gradients = {
       "card-green": "linear-gradient(135deg, #1f9d45, #24923f)",
       "card-red": "linear-gradient(135deg, #d91f26, #ef2d2d)",
       "card-blue": "linear-gradient(135deg, #2f7de1, #4a9df8)",
       "card-orange": "linear-gradient(135deg, #e45b05, #ff6a00)",
     };
 
-    return 
+    return (
       <div className="col-xl-2 col-lg-4 col-md-4 col-6" key={i}>
 
-        <div>
+        <div
           style={{
             background: gradients[card.color],
             borderRadius: 16,
@@ -179,8 +178,7 @@ const absent = todayAttendance.filter(
             flexDirection: "column",
             justifyContent: "space-between",
           }}
-        </div>
-
+        >
 
           {/* ICON */}
           <div>
@@ -211,25 +209,29 @@ const absent = todayAttendance.filter(
             </div>
 
             {/* VALUE */}
-<div
-  style={{
-    fontSize: 26,
-    fontWeight: 800,
-    lineHeight: 1.25,
-    color: "#fff",
-    wordBreak: "break-word",
-    overflowWrap: "break-word",
-    whiteSpace: "normal",
-    maxWidth: "100%",
-    fontFamily: "'JetBrains Mono', monospace",
-  }}
->
+            <div
+              style={{
+                fontSize: 26,
+                fontWeight: 800,
+                lineHeight: 1.25,
+                color: "#fff",
+                wordBreak: "break-word",
+                overflowWrap: "break-word",
+                whiteSpace: "normal",
+                maxWidth: "100%",
+                fontFamily: "'JetBrains Mono', monospace",
+              }}
+            >
               {card.unit || ""}
               {card.value}
             </div>
 
           </div>
-        ))}
+        </div>
+      </div>
+    );
+  })}
+</div>
         {statCards.slice(3).map((card, i) => (
           <div className="col-md-4 col-12" key={i + 3}>
             <div className={`shadow-sm ${card.color}`} style={statCardStyle}>
