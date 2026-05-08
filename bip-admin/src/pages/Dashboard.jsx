@@ -51,6 +51,22 @@ const DEPARTMENTS = [
   'Logistics', 'Administration', 'Site Supervision', 'Other',
 ];
 
+const MAX_BAR_PX = 140;
+
+function scaleBar(value, maxValue) {
+  if (!maxValue || maxValue === 0) return 4;
+  return Math.max(4, (value / maxValue) * MAX_BAR_PX);
+}
+
+// Shorten large rupee values for mobile labels: ₹19,56,536 → ₹19.6L
+function shortInr(v) {
+  const n = Number(v) || 0;
+  if (n >= 10000000) return `₹${(n / 10000000).toFixed(1)}Cr`;
+  if (n >= 100000)   return `₹${(n / 100000).toFixed(1)}L`;
+  if (n >= 1000)     return `₹${(n / 1000).toFixed(1)}K`;
+  return `₹${n.toFixed(0)}`;
+}
+
 export default function Dashboard() {
   const [data, setData] = useState({
     invoices: [],
@@ -81,17 +97,15 @@ export default function Dashboard() {
       products:   JSON.parse(localStorage.getItem("products"))              || [],
       otRecords:  JSON.parse(localStorage.getItem("bip_ot_records"))        || [],
     });
-
     const saved = localStorage.getItem("quotes_summary");
-    if (saved) {
-      try { setQuoteSummary(JSON.parse(saved)); } catch (_) {}
-    }
+    if (saved) { try { setQuoteSummary(JSON.parse(saved)); } catch (_) {} }
   }, []);
 
   // ── Financial ─────────────────────────────────────────────────────────────
   const totalRevenue = data.invoices.reduce((s, i) => s + (i.total || 0), 0);
   const totalExpense = data.purchases.reduce((s, p) => s + (p.grandTotal || 0), 0);
   const profit       = totalRevenue - totalExpense;
+  const chartMax     = Math.max(totalRevenue, totalExpense, 1);
 
   // ── Attendance ────────────────────────────────────────────────────────────
   const today           = new Date().toISOString().split("T")[0];
@@ -101,37 +115,16 @@ export default function Dashboard() {
   const present         = todayAttendance.filter(a => a.status === "Present").length;
   const absent          = todayAttendance.filter(a => a.status === "Absent").length;
 
-  // ── OT Stats ──────────────────────────────────────────────────────────────
-  const activeOT        = data.otRecords.filter(r => r.status === 'Approved' || r.status === 'Pending');
-  const totalOnOT       = new Set(activeOT.map(r => r.employeeId || r.employeeName)).size;
-  const totalOTHours    = data.otRecords.reduce((s, r) => s + (Number(r.otHours) || 0), 0);
-  const totalOTPay      = data.otRecords.reduce((s, r) => s + (Number(r.otPay)  || 0), 0);
-
-  // OT by department
-  const otByDept = DEPARTMENTS.map(dept => {
-    const deptRecords = activeOT.filter(r => r.department === dept);
-    const empCount    = new Set(deptRecords.map(r => r.employeeId || r.employeeName)).size;
+  // ── OT ────────────────────────────────────────────────────────────────────
+  const activeOT  = data.otRecords.filter(r => r.status === 'Approved' || r.status === 'Pending');
+  const totalOnOT = new Set(activeOT.map(r => r.employeeId || r.employeeName)).size;
+  const otByDept  = DEPARTMENTS.map(dept => {
+    const empCount = new Set(activeOT.filter(r => r.department === dept).map(r => r.employeeId || r.employeeName)).size;
     return { dept, count: empCount };
   }).filter(d => d.count > 0);
 
-// ✅ Employee counts
-const totalEmployees = uniqueEmployees.length;
-
-const present = todayAttendance.filter(
-  a => a.status === "Present"
-).length;
-
-const absent = todayAttendance.filter(
-  a => a.status === "Absent"
-).length;
-
-  // ── LOW STOCK: uses stockQty (from Products.jsx) and minStock threshold ──
-  // A product is "low stock" if stockQty < 10 OR stockQty <= minStock (whichever fires first)
-  const lowStock = data.products.filter(p => {
-    const qty = Number(p.stockQty);
-    const min = Number(p.minStock) || 10;
-    return qty < 10 || qty <= min;
-  });
+  // ── Stock ─────────────────────────────────────────────────────────────────
+  const lowStock = data.products.filter(p => (p.stock || 0) < 10);
 
   // ── Stat Cards ────────────────────────────────────────────────────────────
   const statCards = [
@@ -143,95 +136,35 @@ const absent = todayAttendance.filter(
     { label: 'Clients',          value: data.clients.length,     icon: 'bi-person-lines-fill', color: 'card-blue'               },
   ];
 
-   return (
-   <>
-    <div className="page-header">
-      <h1>Dashboard</h1>
-      <p>Welcome back! Here's your business overview.</p>
-    </div>
+  const bars = [
+    { label: 'Revenue', value: totalRevenue,       color1: '#2da44e', color2: '#1a7f37', textColor: '#1a7f37' },
+    { label: 'Expense', value: totalExpense,       color1: '#f85149', color2: '#cf222e', textColor: '#cf222e' },
+    { label: 'Profit',  value: Math.abs(profit),
+      color1: profit >= 0 ? '#54aeff' : '#f85149',
+      color2: profit >= 0 ? '#0969da' : '#cf222e',
+      textColor: profit >= 0 ? '#0969da' : '#cf222e' },
+  ];
 
-    {/* 🔥 SUMMARY CARDS */}
-    <div className="row g-4 mb-4"><div className="row g-4 mb-4">
-  {statCards.map((card, i) => {
-
-    const gradients = {
-      "card-green": "linear-gradient(135deg, #1f9d45, #24923f)",
-      "card-red": "linear-gradient(135deg, #d91f26, #ef2d2d)",
-      "card-blue": "linear-gradient(135deg, #2f7de1, #4a9df8)",
-      "card-orange": "linear-gradient(135deg, #e45b05, #ff6a00)",
-    };
-
-    return (
-      <div className="col-xl-2 col-lg-4 col-md-4 col-6" key={i}>
-
-        <div
-          style={{
-            background: gradients[card.color],
-            borderRadius: 16,
-            padding: "22px",
-            height: 210,
-            color: "#fff",
-            position: "relative",
-            overflow: "hidden",
-            boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-          }}
-        >
-
-          {/* ICON */}
-          <div>
-            <i
-              className={`bi ${card.icon}`}
-              style={{
-                fontSize: 26,
-                color: "#fff",
-              }}
-            ></i>
-          </div>
-
-          {/* TEXT CONTENT */}
-          <div>
-
-            {/* LABEL */}
-            <div
-              style={{
-                fontSize: 14,
-                fontWeight: 700,
-                textTransform: "uppercase",
-                opacity: 0.92,
-                marginBottom: 12,
-                lineHeight: 1.5,
-              }}
-            >
-              {card.label}
-            </div>
-
-            {/* VALUE */}
-            <div
-              style={{
-                fontSize: 26,
-                fontWeight: 800,
-                lineHeight: 1.25,
-                color: "#fff",
-                wordBreak: "break-word",
-                overflowWrap: "break-word",
-                whiteSpace: "normal",
-                maxWidth: "100%",
-                fontFamily: "'JetBrains Mono', monospace",
-              }}
-            >
-              {card.unit || ""}
-              {card.value}
-            </div>
-
-          </div>
-        </div>
+  return (
+    <>
+      <div className="page-header">
+        <h1>Dashboard</h1>
+        <p>Welcome back! Here's your business overview.</p>
       </div>
-    );
-  })}
-</div>
+
+      {/* Summary Cards */}
+      <div className="row g-3 mb-4">
+        {statCards.slice(0, 3).map((card, i) => (
+          <div className="col-md-4 col-12" key={i}>
+            <div className={`shadow-sm ${card.color}`} style={statCardStyle}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={statLabelStyle}>{card.label}</div>
+                <div style={statIconStyle}><i className={`bi ${card.icon}`}></i></div>
+              </div>
+              <div style={statValueStyle}>{card.unit || ""}{card.value}</div>
+            </div>
+          </div>
+        ))}
         {statCards.slice(3).map((card, i) => (
           <div className="col-md-4 col-12" key={i + 3}>
             <div className={`shadow-sm ${card.color}`} style={statCardStyle}>
@@ -245,21 +178,121 @@ const absent = todayAttendance.filter(
         ))}
       </div>
 
-      {/* Simple Graph */}
+      {/* ── Revenue vs Expense Chart — mobile-safe ── */}
       <div className="row g-3 mb-4">
         <div className="col-12">
-          <div className="chart-placeholder shadow-sm">
-            <h6 style={{ fontWeight: 700 }}>
+          <div className="chart-placeholder shadow-sm" style={{ padding: '16px 16px 12px', boxSizing: 'border-box', overflow: 'hidden' }}>
+            <h6 style={{ fontWeight: 700, marginBottom: 16 }}>
               <i className="bi bi-bar-chart-fill me-2"></i>Revenue vs Expense
             </h6>
-            <div style={{ display: "flex", gap: 20, marginTop: 20 }}>
-              <div>
-                <p style={{ fontSize: 12 }}>Revenue</p>
-                <div style={{ height: totalRevenue / 50, width: 40, background: "#1a7f37" }}></div>
+
+            {/*
+              KEY FIX:
+              - width: 100% + overflow: hidden → chart never wider than card
+              - bars use flex: 1 so they share space equally regardless of screen width
+              - value labels use shortInr() so they don't overflow on narrow screens
+              - the whole chart is a flex column with a fixed height
+            */}
+            <div style={{
+              width: '100%',
+              overflow: 'hidden',
+              boxSizing: 'border-box',
+            }}>
+              {/* Bar area */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'flex-end',
+                justifyContent: 'space-around',   /* ← evenly distribute, no fixed gaps */
+                width: '100%',
+                height: MAX_BAR_PX + 48,
+                position: 'relative',
+                boxSizing: 'border-box',
+              }}>
+                {/* Baseline */}
+                <div style={{
+                  position: 'absolute',
+                  left: 0, right: 0, bottom: 28,
+                  height: 1,
+                  background: '#e1e8ed',
+                  zIndex: 0,
+                }} />
+
+                {bars.map(bar => (
+                  <div
+                    key={bar.label}
+                    style={{
+                      flex: 1,                       /* ← fills equal share of width */
+                      maxWidth: 90,                  /* ← never too wide on desktop */
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 4,
+                      zIndex: 1,
+                    }}
+                  >
+                    {/* Shortened value label — no overflow on mobile */}
+                    <span style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      color: bar.textColor,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: '100%',
+                      textAlign: 'center',
+                    }}>
+                      {shortInr(bar.value)}
+                    </span>
+
+                    {/* Bar — width is % of flex cell, never overflows */}
+                    <div style={{
+                      width: '60%',                  /* ← relative to flex cell */
+                      minWidth: 18,
+                      height: scaleBar(bar.value, chartMax),
+                      background: `linear-gradient(180deg, ${bar.color1} 0%, ${bar.color2} 100%)`,
+                      borderRadius: '4px 4px 0 0',
+                      transition: 'height 0.5s ease',
+                    }} />
+
+                    {/* Label */}
+                    <span style={{
+                      fontSize: 11,
+                      color: '#57606a',
+                      fontWeight: 600,
+                      whiteSpace: 'nowrap',
+                    }}>
+                      {bar.label}
+                    </span>
+                  </div>
+                ))}
               </div>
-              <div>
-                <p style={{ fontSize: 12 }}>Expense</p>
-                <div style={{ height: totalExpense / 50, width: 40, background: "#cf222e" }}></div>
+
+              {/* Full values row below chart (visible on all screens) */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-around',
+                marginTop: 4,
+                paddingTop: 8,
+                borderTop: '1px solid #f0f0f0',
+                flexWrap: 'wrap',
+                gap: 4,
+              }}>
+                {bars.map(bar => (
+                  <div key={bar.label + '_val'} style={{ textAlign: 'center', minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: 9, color: '#8c959f', fontWeight: 700, textTransform: 'uppercase' }}>{bar.label}</div>
+                    <div style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: bar.textColor,
+                      fontFamily: 'monospace',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}>
+                      {inr(bar.value)}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -277,7 +310,6 @@ const absent = todayAttendance.filter(
             ))}
           </div>
         </div>
-
         <div className="col-md-4">
           <div className="target-card shadow-sm p-3">
             <h6>Recent Purchase Bills</h6>
@@ -287,12 +319,9 @@ const absent = todayAttendance.filter(
             ))}
           </div>
         </div>
-
-        {/* ── RECENT QUOTATIONS ── */}
         <div className="col-md-4">
           <div className="target-card shadow-sm p-3">
             <h6>Recent Quotations</h6>
-
             {quoteSummary.totalQuotes > 0 && (
               <div style={{
                 display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 10px',
@@ -300,10 +329,10 @@ const absent = todayAttendance.filter(
                 background: '#f6f8fa', borderRadius: 8, border: '1px solid #e1e8ed',
               }}>
                 {[
-                  { lbl: 'Total Quotes',   val: quoteSummary.totalQuotes,              mono: false, color: '#24292f' },
-                  { lbl: 'Total Subtotal', val: inr(quoteSummary.totalSubtotal),       mono: true,  color: '#24292f' },
-                  { lbl: 'Total Discount', val: inr(quoteSummary.totalDiscount),       mono: true,  color: '#cf222e' },
-                  { lbl: 'Total Revenue',  val: inr(quoteSummary.totalRevenue),        mono: true,  color: '#bc4c00' },
+                  { lbl: 'Total Quotes',   val: quoteSummary.totalQuotes,        mono: false, color: '#24292f' },
+                  { lbl: 'Total Subtotal', val: inr(quoteSummary.totalSubtotal), mono: true,  color: '#24292f' },
+                  { lbl: 'Total Discount', val: inr(quoteSummary.totalDiscount), mono: true,  color: '#cf222e' },
+                  { lbl: 'Total Revenue',  val: inr(quoteSummary.totalRevenue),  mono: true,  color: '#bc4c00' },
                 ].map(s => (
                   <div key={s.lbl}>
                     <div style={{ fontSize: 9.5, color: '#8c959f', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em' }}>{s.lbl}</div>
@@ -312,12 +341,10 @@ const absent = todayAttendance.filter(
                 ))}
               </div>
             )}
-
-            {data.quotations.length === 0 && <p style={{ color:"#aaa", fontSize:13 }}>No quotations yet</p>}
+            {data.quotations.length === 0 && <p style={{ color: "#aaa", fontSize: 13 }}>No quotations yet</p>}
             {data.quotations.slice(-3).map((q, idx) => (
               <p key={idx} style={{ marginBottom: 4, fontSize: 13 }}>
-                <span style={{ fontWeight: 600, color: '#bc4c00' }}>{q.quoteNo}</span>
-                {' - '}
+                <span style={{ fontWeight: 600, color: '#bc4c00' }}>{q.quoteNo}</span>{' - '}
                 <span style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 600 }}>{inr(q.total)}</span>
                 {q.clientName && <span style={{ color: '#8c959f', fontSize: 11.5 }}> · {q.clientName}</span>}
               </p>
@@ -326,10 +353,8 @@ const absent = todayAttendance.filter(
         </div>
       </div>
 
-      {/* Employee Status + OT Section */}
+      {/* Employee Status + OT + Low Stock */}
       <div className="row g-3 mt-2">
-
-        {/* Employee Status */}
         <div className="col-md-4">
           <div className="target-card shadow-sm p-3" style={{ height: '100%' }}>
             <h6 style={{ fontWeight: 700, marginBottom: 12 }}>Employee Status</h6>
@@ -339,65 +364,51 @@ const absent = todayAttendance.filter(
           </div>
         </div>
 
-        {/* ── LOW STOCK ALERT — reads stockQty from Products.jsx ── */}
-        <div className="col-md-6">
-          <div className="target-card shadow-sm p-3">
-            <h6>⚠️ Low Stock Alert</h6>
-            {lowStock.length === 0 ? (
-              <p style={{ color: '#22c55e', fontSize: 13, fontWeight: 600 }}>
-                ✅ All products are sufficiently stocked
-              </p>
-            ) : (
-              <>
-                <p style={{ fontSize: 11, color: '#9ca3af', marginBottom: 8 }}>
-                  {lowStock.length} product{lowStock.length !== 1 ? 's' : ''} below threshold
-                </p>
-                {lowStock.map((p, i) => {
-                  const qty = Number(p.stockQty);
-                  const isOut = qty === 0;
-                  return (
-                    <div
-                      key={p.id || i}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '6px 10px',
-                        marginBottom: 6,
-                        borderRadius: 7,
-                        background: isOut ? '#fee2e2' : '#fef3c7',
-                        border: `1px solid ${isOut ? '#fca5a5' : '#fde68a'}`,
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: 13, color: '#1f2937' }}>
-                          {p.productName}
-                        </div>
-                        {p.sku && (
-                          <div style={{ fontSize: 11, color: '#9ca3af', fontFamily: 'monospace' }}>
-                            {p.sku}
-                          </div>
-                        )}
+        <div className="col-md-4">
+          <div className="target-card shadow-sm p-3" style={{ height: '100%' }}>
+            <h6 style={{ fontWeight: 700, marginBottom: 12 }}>
+              <i className="bi bi-clock-history me-2" style={{ color: '#bc4c00' }}></i>Overtime Status
+            </h6>
+            <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+              <div style={{ flex: 1, background: '#fff8f0', borderRadius: 8, padding: '6px 10px', border: '1px solid #f5d6b0' }}>
+                <div style={{ fontSize: 10, color: '#8c959f', fontWeight: 700, textTransform: 'uppercase' }}>Total Employees</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: '#24292f' }}>{totalEmployees}</div>
+              </div>
+              <div style={{ flex: 1, background: '#fff8f0', borderRadius: 8, padding: '6px 10px', border: '1px solid #f5d6b0' }}>
+                <div style={{ fontSize: 10, color: '#8c959f', fontWeight: 700, textTransform: 'uppercase' }}>On OT</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: '#bc4c00' }}>{totalOnOT}</div>
+              </div>
+            </div>
+            <div style={{ fontSize: 11, color: '#8c959f', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>By Department</div>
+            {otByDept.length === 0
+              ? <p style={{ fontSize: 13, color: '#aaa', marginBottom: 0 }}>No active OT records</p>
+              : <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {DEPARTMENTS.map(dept => {
+                    const entry = otByDept.find(d => d.dept === dept);
+                    if (!entry) return null;
+                    return (
+                      <div key={dept} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: 13 }}>{dept}</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: '#bc4c00' }}>{entry.count}</span>
                       </div>
-                      <span style={{
-                        fontSize: 12,
-                        fontWeight: 700,
-                        padding: '3px 10px',
-                        borderRadius: 20,
-                        background: isOut ? '#ef4444' : '#f59e0b',
-                        color: '#fff',
-                        whiteSpace: 'nowrap',
-                      }}>
-                        {isOut ? 'Out of Stock' : `Qty: ${qty}`}
-                      </span>
-                    </div>
-                  );
-                })}
-              </>
-            )}
+                    );
+                  })}
+                </div>
+            }
           </div>
         </div>
 
+        <div className="col-md-4">
+          <div className="target-card shadow-sm p-3" style={{ height: '100%' }}>
+            <h6 style={{ fontWeight: 700, marginBottom: 12 }}>Low Stock Alert</h6>
+            {lowStock.length === 0
+              ? <p style={{ marginBottom: 0 }}>No low stock</p>
+              : lowStock.map((p, i) => (
+                  <p key={i} style={{ marginBottom: 6 }}>{p.name} - <strong style={{ color: '#cf222e' }}>{p.stock}</strong></p>
+                ))
+            }
+          </div>
+        </div>
       </div>
     </>
   );
